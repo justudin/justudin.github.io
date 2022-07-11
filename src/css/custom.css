@@ -1,0 +1,25 @@
+.myprofile {
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
+	animation: animatedBackground 50s infinite;
+	animation-delay: 0s;
+	-moz-animation: none;
+	-ms-animation: animatedBackground 50s infinite;
+	-webkit-animation: animatedBackground 50s infinite;
+}
+
+@keyframes animatedBackground {
+	0% {
+		background-image: url('img/background_1.webp');
+	}
+
+	50% {
+		background-image: url('img/background_2.webp');
+	}
+
+	100% {
+		background-image: url('img/background_3.webp');
+	}
+}
