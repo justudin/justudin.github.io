@@ -4,7 +4,6 @@ const cleanCSS = require('gulp-clean-css');
 const uglify = require('gulp-uglify');
 const del = require('del');
 const webp = require('gulp-webp');
-const htmlmin = require('gulp-htmlmin');
 
 // Concat and minify CSS files
 gulp.task('build-css', () => {
@@ -40,7 +39,16 @@ gulp.task('build-img', () =>
 
 gulp.task('build-html', () =>
     gulp.src('src/*.html')
-        .pipe(htmlmin({ collapseWhitespace: true }))
+        .pipe(gulp.dest('public'))
+);
+
+gulp.task('copy-redirect', () =>
+    gulp.src('src/_redirects')
+        .pipe(gulp.dest('public'))
+);
+
+gulp.task('copy-nojekyll', () =>
+    gulp.src('src/.nojekyll')
         .pipe(gulp.dest('public'))
 );
 
@@ -50,7 +58,7 @@ gulp.task('clean', async () => {
 
 // Start session
 gulp.task("session-start", (cb) => {
-    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'build-img', 'build-html')(cb);
+    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'build-img', 'build-html','copy-redirect', 'copy-nojekyll')(cb);
 });
 
 gulp.task('default', gulp.series('session-start'));

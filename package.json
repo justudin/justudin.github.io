@@ -20,7 +20,7 @@
     "tailwindcss": "^2.2.19"
   },
   "scripts": {
-    "build": "tailwindcss -o src/css/academic-page.css && gulp && touch public/.nojekyll",
+    "build": "tailwindcss -o src/css/academic-page.css && gulp",
     "deploy": "git push origin :gh-pages && git subtree push --prefix public origin gh-pages"
   },
   "devDependencies": {
