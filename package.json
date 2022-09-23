@@ -21,7 +21,7 @@
   },
   "scripts": {
     "build": "tailwindcss -o src/css/academic-page.css && gulp",
-    "deploy": "git push origin :gh-pages && git subtree push --prefix public origin gh-pages"
+    "deploy": "git push origin :gh-pages && git subtree push --prefix docs origin gh-pages"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^4.1.3",

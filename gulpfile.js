@@ -13,14 +13,14 @@ gulp.task('build-css', () => {
         console.log(`${details.name}: ${details.stats.originalSize}`);
         console.log(`${details.name}: ${details.stats.minifiedSize}`);
       }))
-    .pipe(gulp.dest('public'));
+    .pipe(gulp.dest('docs'));
 });
 
 // Concat and minify libraries JS files
 gulp.task('build-vendor-js', function () {
     return gulp.src(['src/js/libs/*.js'])
         .pipe(concat('vendor.js'))
-        .pipe(gulp.dest('public/js'));
+        .pipe(gulp.dest('docs/js'));
 });
 
 // minify academic-page.js
@@ -28,32 +28,32 @@ gulp.task('build-js', function () {
     return gulp.src(['src/js/academic-page.js'])
         .pipe(concat('academic-page.min.js'))
         .pipe(uglify())
-        .pipe(gulp.dest('public/js'));
+        .pipe(gulp.dest('docs/js'));
 });
 
 gulp.task('build-img', () =>
     gulp.src('src/img/*.jpg')
         .pipe(webp())
-        .pipe(gulp.dest('public/img'))
+        .pipe(gulp.dest('docs/img'))
 );
 
 gulp.task('build-html', () =>
     gulp.src('src/*.html')
-        .pipe(gulp.dest('public'))
+        .pipe(gulp.dest('docs'))
 );
 
 gulp.task('copy-redirect', () =>
     gulp.src('src/_redirects')
-        .pipe(gulp.dest('public'))
+        .pipe(gulp.dest('docs'))
 );
 
 gulp.task('copy-nojekyll', () =>
     gulp.src('src/.nojekyll')
-        .pipe(gulp.dest('public'))
+        .pipe(gulp.dest('docs'))
 );
 
 gulp.task('clean', async () => {
-   return del.sync('public');
+   return del.sync('docs');
 });
 
 // Start session
