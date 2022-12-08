@@ -4,7 +4,7 @@ const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual 
 
 const fethWorks = async () => {
     try {
-        const response = await axios.get('https://academic-page.herokuapp.com/orcid/'+YOUR_ORCID+'/works');
+        const response = await axios.get('http://api.muhammadsyafrudin.com:9009/orcid/'+YOUR_ORCID+'/works');
         const workItems = response.data;
         //console.log(workItems)
         const animateLoading = document.getElementById('animateLoading');
