@@ -4,7 +4,7 @@ const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual 
 
 const fethWorks = async () => {
     try {
-        const response = await axios.get('http://api.muhammadsyafrudin.com:9009/orcid/'+YOUR_ORCID+'/works');
+        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/works');
         const workItems = response.data;
         //console.log(workItems)
         const animateLoading = document.getElementById('animateLoading');
@@ -24,7 +24,7 @@ const fethWorks = async () => {
             workCount.innerHTML = "<button id='detailPublications'>Publications*: " + workItems.total_papers + "</button>";
             totalCitations.innerHTML = "Citations*: " + workItems.total_citations;
             hIndex.innerHTML = "H-index*: " + workItems.hindex;
-            footerInfo.innerHTML = '<p class="italic">*This data only shows the publications with valid Digital Object Identifier addresses. They are obtained from ORCID and Crossref independently, and may differ from Google Scholar. Generated as of ' + workItems.updated + '.</p>';
+            footerInfo.innerHTML = '<p class="italic">*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from Google Scholar. Generated as of ' + workItems.updated + '.</p>';
             const modal = document.getElementById("my-modal");
             const btnOpen = document.getElementById("detailPublications");
             const btnClose = document.getElementById("ok-btn");
