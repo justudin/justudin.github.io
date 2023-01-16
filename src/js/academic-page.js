@@ -52,6 +52,29 @@ const fethWorks = async () => {
 
 fethWorks();
 
+//recentUpdates
+const fetchUpdates = async () => {
+    try {
+            const recentData = document.getElementById('recentUpdates');
+            const response = await axios.get('https://research.muhammadsyafrudin.com/updates/rss.xml');
+            const rssdataxml = response.data;
+            const updatedata = fromXML(rssdataxml);
+            const recentupdates = updatedata.rss.channel.item.slice(0, 4);
+            console.log(recentupdates);
+            let updates = "";
+            for (var i = 0; i < recentupdates.length; i++) {
+                updates += "[<a href='"+recentupdates[i].link+"' target='_blank' class='link' data-tippy-content='View this update'>"+ recentupdates[i].title + "</a>], "
+            }
+            updates += "<a href='https://research.muhammadsyafrudin.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>[All updates].</a>";
+            recentData.innerHTML = "Recent updates: "+updates;
+
+        } catch (errors) {
+        console.error(errors);
+    }
+};
+
+fetchUpdates();
+
 const yearbuild = document.getElementById("yearbuild");
 yearbuild.innerHTML = new Date().getFullYear();
 
