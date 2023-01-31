@@ -15,11 +15,12 @@
 </head>
 <body id="myprofile"
 	class="myprofile backdrop-filter backdrop-blur-sm font-sans antialiased text-gray-900 leading-normal tracking-wider bg-cover">
-	<!--modal content-->
-	<div id="my-modal" style="display: none;"
+	
+	<!--modal publications content-->
+	<div id="my-modal-publications" style="display: none;"
 		class="max-w-4xl h-auto flex items-center flex-wrap mx-auto my-16 lg:my-0 rounded-md bg-white">
 		<div class="my-3 text-center">
-			<h1 class="lg:text-xl text-base font-bold pt-4 md:pt-2 lg:pt-0 text-center">Publications*</h1>
+			<h1 id="tblTitle" class="lg:text-xl text-base font-bold pt-4 md:pt-2 lg:pt-0 text-center">Publications*</h1>
 			<div class="mx-auto lg:mx-0 w-full pt-3 border-b-2 border-red-800"></div>
 			<div class="overflow-auto h-96 lg:text-base text-xs">
 				<table class="table-auto border">
@@ -28,7 +29,7 @@
 							<th class="px-4 py-2 ">#</th>
 							<th class="px-4 py-2 ">Title</th>
 							<th class="px-4 py-2 ">Year</th>
-							<th class="px-4 py-2">Type</th>
+							<th class="px-4 py-2 hidden lg:block">Type</th>
 							<th class="px-4 py-2">Citations</th>
 						</tr>
 					</thead>
@@ -37,11 +38,65 @@
 				</table>
 			</div>
 			<div class="items-center bottom-0">
-				<button id="ok-btn"
+				<button id="ok-btn-publications"
 					class="px-4 py-2 bg-gray-800 text-white text-base font-medium rounded-md w-48 shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-800">Close</button>
 			</div>
 		</div>
 	</div>
+
+	<!--modal review content-->
+	<div id="my-total-review-modal" style="display: none;"
+		class="max-w-4xl h-auto flex items-center flex-wrap mx-auto my-16 lg:my-0 rounded-md bg-white">
+		<div class="my-3 text-center">
+			<h1 id="tblReviewTitle" class="lg:text-xl text-base font-bold pt-4 md:pt-2 lg:pt-0 text-center">Verified peer reviews</h1>
+			<div class="mx-auto lg:mx-0 w-full pt-3 border-b-2 border-red-800"></div>
+			<div class="overflow-auto h-96 lg:text-base text-xs">
+				<table class="table-auto border">
+					<thead>
+						<tr>
+							<th class="px-4 py-2 ">#</th>
+							<th class="px-4 py-2 ">Outlet</th>
+							<th class="px-4 py-2 ">Reviews</th>
+						</tr>
+					</thead>
+					<tbody id="dtReviews">
+					</tbody>
+				</table>
+			</div>
+			<div class="items-center bottom-0">
+				<button id="ok-btn-reviews"
+					class="px-4 py-2 bg-gray-800 text-white text-base font-medium rounded-md w-48 shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-800">Close</button>
+			</div>
+		</div>
+	</div>
+
+	<!--modal metrics content-->
+	<div id="my-metrics-modal" style="display: none;"
+		class="max-w-4xl h-auto flex items-center flex-wrap mx-auto my-16 lg:my-0 rounded-md bg-white">
+		<div class="my-3 text-center">
+			<h1 id="tblMetricsTitle" class="lg:text-xl text-base font-bold pt-4 md:pt-2 lg:pt-0 text-center">Metrics summary</h1>
+			<div class="mx-auto lg:mx-0 w-full pt-3 border-b-2 border-red-800"></div>
+			<div class="overflow-auto h-96 lg:text-base text-xs">
+				<table class="table-auto border">
+					<thead>
+						<tr>
+							<th class="px-4 mx-4 py-2 "></th>
+							<th class="px-4 mx-4 py-2 ">Metric</th>
+							<th class="px-4 mx-4 py-2 ">Total</th>
+						</tr>
+					</thead>
+					<tbody id="dtMetrics">
+					</tbody>
+				</table>
+				<div id="metricnotes"></div>
+			</div>
+			<div class="items-center bottom-0">
+				<button id="ok-btn-metrics"
+					class="px-4 py-2 bg-gray-800 text-white text-base font-medium rounded-md w-48 shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-800">Close</button>
+			</div>
+		</div>
+	</div>
+	
 	<div class="max-w-4xl flex items-center h-auto lg:h-screen flex-wrap mx-auto my-16 lg:my-0">
 		<!--Main Col-->
 		<div id="profile"
@@ -80,12 +135,10 @@
 					<div id="workCount"
 						class="flex-1 py-4 flex text-white text-center w-48 bg-gray-300 h-6 rounded-md items-center justify-center">
 					</div>
-					<div id="totalCitations"
+					<div id="totalReviews"
 						class="flex-1 py-4 flex text-white text-center w-48 bg-gray-300 h-6 rounded-md items-center justify-center">
 					</div>
-					<div id="hIndex"
-						class="flex-1 py-4 flex text-white text-center w-48 bg-gray-300 h-6 rounded-md items-center justify-center">
-					</div>
+					<div id="openMetrics" class="flex-1 py-4 flex text-white text-center w-48 h-6 rounded-md items-center justify-center bg-red-800"><button id="detailReviews">Metrics summary</button></div>
 				</div>
 				<div class="text-left text-base">
 					<p class="pt-3">
