@@ -29,9 +29,9 @@ const fethWorks = async () => {
             const modalmetrics = document.getElementById("my-metrics-modal");
 
             //add the metrics
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total publications*</td><td>"+ workItems.total_papers +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total citations*</td><td>"+ workItems.total_citations +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>H-index*</td><td>"+ workItems.hindex +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total publications</td><td>"+ workItems.total_papers +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total citations</td><td>"+ workItems.total_citations +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>H-index</td><td>"+ workItems.hindex +"</td></tr>";
 
             btnOpen.onclick = function () {
                 modalreview.style.display = "none";
@@ -102,8 +102,8 @@ const fethReviews = async () => {
             }
             tblPubReview.innerHTML = dtTbleReview;
 
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total verified reviews*</td><td>"+ workItems.total_reviews +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total outlets*</td><td>"+ workItems.total_outlets +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total verified reviews</td><td>"+ workItems.total_reviews +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total outlets</td><td>"+ workItems.total_outlets +"</td></tr>";
             //console.log(dtTble);
         }
         return workItems;
