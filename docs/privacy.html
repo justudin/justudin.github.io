@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Muhammad Syafrudin</title>
+	<title>Privacy Policy</title>
 	<link rel="shortcut icon" type="image/jpg" href="img/profile_mobile.webp" />
 	<meta name="description"
 		content="Muhammad Syafrudin currently works as Assistant Professor at the Department of Artificial Intelligence, Sejong University, Seoul, Republic of Korea since March 2022. Previously, he worked with the Department of Industrial and Systems Engineering, Dongguk University, Seoul, Republic of Korea for 3 years as Assistant Professor and 5 years as researcher. He carries out research and development (R&D) in Industrial Artificial Intelligence (IAI), Big data, IoT, Health Informatics, etc. He is also an instructor with practical course on undergraduate topics in programming languages, big data and database systems.">
@@ -13,172 +14,48 @@
 	<meta name="author" content="Muhammad Syafrudin">
 	<link rel="stylesheet" href="academic-page.css" />
 </head>
+
 <body id="myprofile"
 	class="myprofile backdrop-filter backdrop-blur-sm font-sans antialiased text-gray-900 leading-normal tracking-wider bg-cover">
-	
-	<!--modal publications content-->
-	<div id="my-modal-publications" style="display: none;"
-		class="max-w-4xl h-auto flex items-center flex-wrap mx-auto my-16 lg:my-0 rounded-md bg-white">
-		<div class="my-3 text-center">
-			<h1 id="tblTitle" class="lg:text-xl text-base font-bold pt-4 md:pt-2 lg:pt-0 text-center">Publications*</h1>
-			<div class="mx-auto lg:mx-0 w-full pt-3 border-b-2 border-red-800"></div>
-			<div class="overflow-auto h-96 lg:text-base text-xs">
-				<table class="table-auto border">
-					<thead>
-						<tr>
-							<th class="px-4 py-2 ">#</th>
-							<th class="px-4 py-2 ">Title</th>
-							<th class="px-4 py-2 ">Year</th>
-							<th class="px-4 py-2 hidden lg:block">Type</th>
-							<th class="px-4 py-2">Citations</th>
-						</tr>
-					</thead>
-					<tbody id="dtPublications">
-					</tbody>
-				</table>
-			</div>
-			<div class="items-center bottom-0">
-				<button id="ok-btn-publications"
-					class="px-4 py-2 bg-gray-800 text-white text-base font-medium rounded-md w-48 shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-800">Close</button>
-			</div>
-		</div>
-	</div>
 
-	<!--modal review content-->
-	<div id="my-total-review-modal" style="display: none;"
-		class="max-w-4xl h-auto flex items-center flex-wrap mx-auto my-16 lg:my-0 rounded-md bg-white">
-		<div class="my-3 text-center">
-			<h1 id="tblReviewTitle" class="lg:text-xl text-base font-bold pt-4 md:pt-2 lg:pt-0 text-center">Verified peer reviews</h1>
-			<div class="mx-auto lg:mx-0 w-full pt-3 border-b-2 border-red-800"></div>
-			<div class="overflow-auto h-96 lg:text-base text-xs">
-				<table class="table-auto border">
-					<thead>
-						<tr>
-							<th class="px-4 py-2 ">#</th>
-							<th class="px-4 py-2 ">Outlet</th>
-							<th class="px-4 py-2 ">Reviews</th>
-						</tr>
-					</thead>
-					<tbody id="dtReviews">
-					</tbody>
-				</table>
-			</div>
-			<div class="items-center bottom-0">
-				<button id="ok-btn-reviews"
-					class="px-4 py-2 bg-gray-800 text-white text-base font-medium rounded-md w-48 shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-800">Close</button>
-			</div>
-		</div>
-	</div>
-
-	<!--modal metrics content-->
-	<div id="my-metrics-modal" style="display: none;"
-		class="max-w-4xl h-auto flex items-center flex-wrap mx-auto my-16 lg:my-0 rounded-md bg-white">
-		<div class="my-3 text-center">
-			<h1 id="tblMetricsTitle" class="lg:text-xl text-base font-bold pt-4 md:pt-2 lg:pt-0 text-center">Metrics summary*</h1>
-			<div class="mx-auto lg:mx-0 w-full pt-3 border-b-2 border-red-800"></div>
-			<div class="overflow-auto h-96 lg:text-base text-xs">
-				<table class="table-auto border" width="100%">
-					<thead>
-						<tr>
-							<th class="px-4 mx-4 py-2 "></th>
-							<th class="px-4 mx-4 py-2 ">Metric</th>
-							<th class="px-4 mx-4 py-2 ">Total</th>
-						</tr>
-					</thead>
-					<tbody id="dtMetrics">
-					</tbody>
-				</table>
-				<div id="metricnotes"></div>
-			</div>
-			<div class="items-center bottom-0">
-				<button id="ok-btn-metrics"
-					class="px-4 py-2 bg-gray-800 text-white text-base font-medium rounded-md w-48 shadow-sm hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-800">Close</button>
-			</div>
-		</div>
-	</div>
-	
 	<div class="max-w-4xl flex items-center h-auto lg:h-screen flex-wrap mx-auto my-16 lg:my-0">
 		<!--Main Col-->
 		<div id="profile"
 			class="w-full lg:w-5/5 rounded-lg lg:rounded-l-lg shadow-2xl bg-white opacity-65 lg:mx-6 lg:mx-0">
 			<div class="relative p-4 md:p-12 text-center lg:text-left">
-				<!-- Image for mobile view-->
-				<div class="block lg:hidden rounded-full shadow-xl mx-auto -mt-16 h-24 w-24 bg-cover bg-center filter drop-shadow-lg"
-					alt="profile image"
-					style="background-image: url('img/profile_mobile.webp')"></div>
-					<div class="pt-2 text-gray-600 text-xs lg:text-sm flex items-center justify-center lg:justify-start lg:py-4 md:py-2 lg:pt-0">
-						<a href="ko.html"
-						class="link pr-2" data-tippy-content="한국어로 읽기">한국어</a>
-						| <a href="id.html" class="link pl-2" data-tippy-content="Baca dalam Bahasa Indonesia">Bahasa
-							Indonesia</a></div>
-				<h1 class="lg:text-3xl text-base lg:text-sm font-bold pt-4 md:pt-2 lg:pt-0">Muhammad Syafrudin</h1>
-				<div class="absolute -mx-10 -my-10 top-0 lg:left-3/4">
-					<img src="img/profile_desktop.webp" alt="Muhammad Syafrudin profile image"
-						class="filter drop-shadow-lg lg:rounded-lg max-w-xs h-auto shadow-2xl hidden lg:block" width="320px" height="210px">
-					<p class="text-center text-gray-500 text-xs italic hidden lg:block">Source: Universitas Budi Luhur
-						<a href="https://edukasi.kompas.com/read/2019/08/20/18345511/belajar-dari-korea-selatan-riset-berbasis-kebutuhan-industri"
-							target="_blank">(Kompas, 2019)</a>
-					</p>
-				</div>
-				<div class="mx-auto lg:mx-0 w-3/5 pt-3 border-b-2 border-red-800"></div>
-				<p class="md:text-sm pt-4 text-base font-bold flex items-center justify-center lg:justify-start"><svg
-						class="hidden h-4 fill-current gray-600 pr-4" xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 20 20">
-						<path
-							d="M9 12H1v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-8v2H9v-2zm0-1H0V5c0-1.1.9-2 2-2h4V2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1h4a2 2 0 0 1 2 2v6h-9V9H9v2zm3-8V2H8v1h4z" />
-					</svg><a href="https://home.sejong.ac.kr/~udin/" class="link" target="_blank"
-						data-tippy-content="Faculty page">Department of Artificial Intelligence, Sejong University</a>
-				</p>
-				<p class="pt-2 text-gray-600 text-xs lg:text-sm flex items-center justify-center lg:justify-start"><svg
-						class="hidden h-4 fill-current gray-600 pr-4" xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 20 20">
-						<path
-							d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zm7.75-8a8.01 8.01 0 0 0 0-4h-3.82a28.81 28.81 0 0 1 0 4h3.82zm-.82 2h-3.22a14.44 14.44 0 0 1-.95 3.51A8.03 8.03 0 0 0 16.93 14zm-8.85-2h3.84a24.61 24.61 0 0 0 0-4H8.08a24.61 24.61 0 0 0 0 4zm.25 2c.41 2.4 1.13 4 1.67 4s1.26-1.6 1.67-4H8.33zm-6.08-2h3.82a28.81 28.81 0 0 1 0-4H2.25a8.01 8.01 0 0 0 0 4zm.82 2a8.03 8.03 0 0 0 4.17 3.51c-.42-.96-.74-2.16-.95-3.51H3.07zm13.86-8a8.03 8.03 0 0 0-4.17-3.51c.42.96.74 2.16.95 3.51h3.22zm-8.6 0h3.34c-.41-2.4-1.13-4-1.67-4S8.74 3.6 8.33 6zM3.07 6h3.22c.2-1.35.53-2.55.95-3.51A8.03 8.03 0 0 0 3.07 6z" />
-					</svg> Seoul, Republic of Korea</p>
-				<div id="animateLoading"
-					class="text-gray-600 pt-3 flex items-stretch lg:mt-5 animate-pulse flex-row h-full space-x-5 text-xs lg:text-base ">
-					<div id="workCount"
-						class="flex-1 py-4 flex text-white text-center w-48 bg-gray-300 h-6 rounded-md items-center justify-center">
-					</div>
-					<div id="totalReviews"
-						class="flex-1 py-4 flex text-white text-center w-48 bg-gray-300 h-6 rounded-md items-center justify-center">
-					</div>
-					<div id="openMetrics" class="flex-1 py-4 flex text-white text-center w-48 h-6 rounded-md items-center justify-center bg-red-800"><button id="detailReviews">Metrics summary</button></div>
-				</div>
+				<h1 class="lg:text-3xl text-base lg:text-sm font-bold pt-4 md:pt-2 lg:pt-0">Privacy Policy</h1>
 				<div class="text-left text-base">
 					<p class="pt-3">
-						Muhammad Syafrudin currently works with <a href="https://home.sejong.ac.kr/~udin/"
-							class="link" target="_blank" data-tippy-content="Visit faculty page">the Department of Artificial
-							Intelligence at Sejong University</a>, Seoul, Korea, since March 2022. Previously, he worked with <a href="https://web.archive.org/web/20230116025244/https://engineer.dongguk.edu/professor/list?professor_haggwa_type=PROFH_039" class="link" target="_blank" data-tippy-content="Visit archived site"> Dongguk University for 3 years as assistant professor</a> and 5 years as graduate researcher. He received his B.Eng. from UIN Sunan Kalijaga in 2013 and earned his Dr.Eng. from Dongguk University in 2019.</p>
-					<p class="pt-3">
-						He's been carrying out <a href="https://muhammadsyafrudin.com/research"
-							class="link" target="_blank" data-tippy-content="Visit research page">research and development (R&D) in Industrial Artificial Intelligence (IAI), Industrial Analytics (IA), Industrial Informatics (II), Industrial IoT (IIoT), Industrial Big Data (IBD)</a> for 10+ years. 
-						He is also an <a href="https://muhammadsyafrudin.com/courses"
-							class="link" target="_blank" data-tippy-content="Visit courses page">instructor with practical course on undergraduate topics in programming languages, linear algebra, big data and database systems as well as graduate-level course: Topics in Machine Learning and Introduction to Deep Learning.</a> </p>
-					<p class="pt-3">
-						Please feel free to <a href="https://research.muhammadsyafrudin.com/contact" class="link" target="_blank" data-tippy-content="Visit contact page">contact him if you have any questions</a> and/or are interested in <a href="https://research.muhammadsyafrudin.com/team#research-collaborator" class="link" target="_blank" data-tippy-content="Visit contact page">research collaboration</a>.
-					</p>
-					<p class="pt-3">
-						<div id="recentUpdates"></div>
-					</p>
-				</div>
-				<p class="pt-3 italic text-sm">
-					<svg class="fill-current text-gray-600" xmlns="http://www.w3.org/2000/svg"
-						xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20px" height="20px"
-						viewBox="0 0 123.961 123.961" style="enable-background:new 0 0 123.961 123.961;"
-						xml:space="preserve">
-						<g>
-							<path d="M49.8,29.032c3.1-1.3,4.4-5,3-8l-4.9-10.3c-1.4-2.899-4.8-4.2-7.8-2.899c-8.5,3.6-15.8,8.3-21.6,14
-					C11.4,28.532,6.6,36.232,4,44.732c-2.6,8.601-4,20.3-4,35.2v30.7c0,3.3,2.7,6,6,6h39.3c3.3,0,6-2.7,6-6v-39.3c0-3.301-2.7-6-6-6
-					H26.5c0.2-10.101,2.6-18.2,7-24.301C37.1,36.133,42.5,32.133,49.8,29.032z" />
-							<path d="M120.4,29.032c3.1-1.3,4.399-5,3-8l-4.9-10.199c-1.4-2.9-4.8-4.2-7.8-2.9c-8.4,3.6-15.601,8.3-21.5,13.9
-					c-7.101,6.8-12,14.5-14.601,23c-2.6,8.399-3.899,20.1-3.899,35.1v30.7c0,3.3,2.7,6,6,6H116c3.3,0,6-2.7,6-6v-39.3
-					c0-3.301-2.7-6-6-6H97.1c0.2-10.101,2.601-18.2,7-24.301C107.7,36.133,113.1,32.133,120.4,29.032z" />
-						</g>
-					</svg> Don’t compare yourself to anyone else because we all have our own unique journey and story
-					that we should be proud of. —
-				</p>
+						<p>This Privacy Policy describes how https://muhammadsyafrudin.com/ ("we," "us," or "our") handles data when you use our website/mobile app/service (the "Service").
+						</p>
+						
+						<h3 class="lg:text-xl text-base lg:text-sm font-bold pt-2 md:pt-2 lg:pt-0">Information We Do Not Collect</h3>
+						<p>We do not collect any personal information from our users. Personal information includes, but is not limited to, names, email addresses, contact details, and any other information that could be used to identify an individual.
+						</p>
 
+						<h3 class="lg:text-xl text-base lg:text-sm font-bold pt-2 md:pt-2 lg:pt-0">Usage Data</h3>
+						<p>We may collect non-personal information about how you use the Service, such as your IP address, device information, and browsing activity. This data is used solely for the purpose of improving the Service and is not linked to any individual.
+						</p>
+
+						<h3 class="lg:text-xl text-base lg:text-sm font-bold pt-2 md:pt-2 lg:pt-0">Third-Party Services</h3>
+						<p>We may use third-party services, such as analytics tools, that collect non-personal information about your use of the Service. These services are used to help us understand how the Service is being used and to improve its functionality.
+						</p>
+
+						<h3 class="lg:text-xl text-base lg:text-sm font-bold pt-2 md:pt-2 lg:pt-0">Data Security</h3>
+						<p>We take reasonable measures to protect any non-personal information we collect from unauthorized access or disclosure.
+						</p>
+
+						<h3 class="lg:text-xl text-base lg:text-sm font-bold pt-2 md:pt-2 lg:pt-0">Changes to This Privacy Policy</h3>
+						<p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
+						</p>
+
+						<h3 class="lg:text-xl text-base lg:text-sm font-bold pt-2 md:pt-2 lg:pt-0">Contact Us</h3>
+						<p>If you have any questions about this Privacy Policy, please contact us at udin@sejong.ac.kr. Even if you do not collect personal information, it's still important to have a privacy policy in place to inform users about the data you do collect and how it is used. Always ensure that your privacy policy accurately reflects your data practices and complies with relevant laws and regulations.
+						</p>
+					</p>
+					
+				</div>
+				
 				<div
 					class="mt-3 mb-3 lg:mt-6 pb-16 lg:pb-0 w-4/5 lg:w-full mx-auto flex flex-wrap items-center justify-between">
 					<a class="link" href="https://orcid.org/0000-0002-5640-4413" target="_blank"
@@ -252,9 +129,10 @@
 
 			<!-- credits source -->
 			<div id="sourceInfo"
-				class="absolute bottom text-center text-gray-300 text-xs italic">
+			class="absolute bottom text-center text-gray-300 text-xs italic">
 				<p class="italic text-center">&copy; <span id="yearbuild"></span> <a href="https://research.muhammadsyafrudin.com/contact">Muhammad Syafrudin</a>. Built with <a href="https://github.com/justudin/academic-page" target="_blank">Academic Page</a>. Background images source: <a href="https://en.sejong.ac.kr/eng/academics/Faculty_Finder.do"
-					target="_blank">Sejong University</a></p></div>
+					target="_blank">Sejong University</a></p>
+			</div>
 		</div>
 		<!-- Pin to top right corner -->
 		<div class="absolute top-0 right-0 h-12 w-18 p-4">
@@ -263,7 +141,6 @@
 	</div>
 	<!-- vendor build location - don't change -->
 	<script src="js/vendor.js"></script>
-	<!-- academic page build location - don't change -->
-	<script src="js/academic-page.min.js"></script>
 </body>
+
 </html>
