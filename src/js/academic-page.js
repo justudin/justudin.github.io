@@ -21,12 +21,14 @@ const fethWorks = async () => {
             tblTitle.innerHTML = workItems.total_papers + "* Publications (Citations: "+ workItems.total_citations+", H-index: "+ workItems.hindex+")";
             workCount.innerHTML = "<button id='detailPublications'>" + workItems.total_papers + "* Publications</button>";
 
-            footerInfo.innerHTML = '<p class="italic">*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from Google Scholar. Generated as of ' + workItems.updated + '.</p>';
+            footerInfo.innerHTML = '<p class="italic">*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href="https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar.</a>. Generated as of ' + workItems.updated + '.</p>';
             const modalpub = document.getElementById("my-modal-publications");
             const btnOpen = document.getElementById("detailPublications");
             const btnClose = document.getElementById("ok-btn-publications");
             const modalreview = document.getElementById("my-total-review-modal");
             const modalmetrics = document.getElementById("my-metrics-modal");
+            const workCountText = document.getElementById("workCountText");
+            const citedCount = document.getElementById("citedCount");
 
             //add the metrics
             tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total publications</td><td>"+ workItems.total_papers +"</td></tr>";
@@ -50,6 +52,9 @@ const fethWorks = async () => {
             }
             tblPub.innerHTML = dtTble;
             //console.log(dtTble);
+
+            workCountText.innerHTML = workItems.total_papers;
+            citedCount.innerHTML = workItems.total_citations;
 
 
         }
@@ -84,6 +89,8 @@ const fethReviews = async () => {
             const modalpub = document.getElementById("my-modal-publications");
             const modalmetrics = document.getElementById("my-metrics-modal");
 
+            const outletCount = document.getElementById("outletCount");
+
 
             btnOpenReview.onclick = function () {
                 modalpub.style.display = "none";
@@ -103,7 +110,8 @@ const fethReviews = async () => {
             tblPubReview.innerHTML = dtTbleReview;
 
             tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total verified reviews</td><td>"+ workItems.total_reviews +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total outlets</td><td>"+ workItems.total_outlets +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total served outlets</td><td>"+ workItems.total_outlets +"</td></tr>";
+            outletCount.innerHTML = workItems.total_outlets;
             //console.log(dtTble);
         }
         return workItems;
@@ -149,7 +157,7 @@ const fethMetrics = async () => {
 fethMetrics()
 
 const metricnotes = document.getElementById('metricnotes');
-metricnotes.innerHTML = "<p class='pt-4 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?user=WLTzkOMAAAAJ&hl=en' target='_blank'>Google Scholar.</a></p>";
+metricnotes.innerHTML = "<p class='pt-4 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate' target='_blank'>Google Scholar.</a></p>";
 
 //recentUpdates
 const fetchUpdates = async () => {
