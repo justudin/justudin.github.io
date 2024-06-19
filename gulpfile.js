@@ -52,13 +52,18 @@ gulp.task('copy-nojekyll', () =>
         .pipe(gulp.dest('docs'))
 );
 
+gulp.task('copy-robots', () =>
+    gulp.src('src/robots.txt')
+        .pipe(gulp.dest('docs'))
+);
+
 gulp.task('clean', async () => {
    return del.sync('docs');
 });
 
 // Start session
 gulp.task("session-start", (cb) => {
-    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'build-img', 'build-html','copy-redirect', 'copy-nojekyll')(cb);
+    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'build-img', 'build-html','copy-redirect', 'copy-nojekyll', 'copy-robots')(cb);
 });
 
 gulp.task('default', gulp.series('session-start'));

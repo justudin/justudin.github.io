@@ -4,6 +4,15 @@ const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual 
 
 let tblMetrics = document.getElementById("dtMetrics");
 
+const d = new Date();
+let curryear = d.getFullYear();
+
+let yearofexplabel = document.getElementById("yearofexp");
+const yearofexp = parseInt(curryear)-2014;
+//console.log(yearofexp+" "+curryear);
+
+yearofexplabel.innerHTML= yearofexp;
+
 const fethWorks = async () => {
     try {
         const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/works');
@@ -194,7 +203,9 @@ tippy('.link', {
 const toggle = document.querySelector('.js-change-theme');
 const body = document.querySelector('body');
 const profile = document.getElementById('profile');
-const modal = document.getElementById("my-modal");
+const modalreview = document.getElementById("my-total-review-modal");
+const modalpub = document.getElementById("my-modal-publications");
+const modalmetrics = document.getElementById("my-metrics-modal");
 
 toggle.addEventListener('click', () => {
     if (body.classList.contains('text-gray-900')) {
@@ -203,15 +214,23 @@ toggle.addEventListener('click', () => {
         body.classList.add('text-gray-100');
         profile.classList.remove('bg-white');
         profile.classList.add('bg-gray-900');
-        modal.classList.remove('bg-white');
-        modal.classList.add('bg-gray-900');
+        modalreview.classList.remove('bg-white');
+        modalreview.classList.add('bg-gray-900');
+        modalpub.classList.remove('bg-white');
+        modalpub.classList.add('bg-gray-900');
+        modalmetrics.classList.remove('bg-white');
+        modalmetrics.classList.add('bg-gray-900');
     } else {
         toggle.innerHTML = "🌛";
         body.classList.remove('text-gray-100');
         body.classList.add('text-gray-900');
         profile.classList.remove('bg-gray-900');
         profile.classList.add('bg-white');
-        modal.classList.remove('bg-gray-900');
-        modal.classList.add('bg-white');
+        modalreview.classList.remove('bg-gray-900');
+        modalreview.classList.add('bg-white');
+        modalpub.classList.remove('bg-gray-900');
+        modalpub.classList.add('bg-white');
+        modalmetrics.classList.remove('bg-gray-900');
+        modalmetrics.classList.add('bg-white');
     }
 });
