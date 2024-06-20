@@ -30,7 +30,7 @@ const fethWorks = async () => {
             tblTitle.innerHTML = workItems.total_papers + "* Publications (Citations: "+ workItems.total_citations+", H-index: "+ workItems.hindex+")";
             workCount.innerHTML = "<button id='detailPublications'>" + workItems.total_papers + "* Publications</button>";
 
-            footerInfo.innerHTML = '<p class="italic">*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href="https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar.</a>. Generated as of ' + workItems.updated + '.</p>';
+            footerInfo.innerHTML = '<p class="italic">*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href="https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar</a>. Generated as of ' + workItems.updated + '.</p>';
             const modalpub = document.getElementById("my-modal-publications");
             const btnOpen = document.getElementById("detailPublications");
             const btnClose = document.getElementById("ok-btn-publications");

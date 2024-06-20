@@ -10,6 +10,11 @@
 	-webkit-animation: animatedBackground 50s infinite;
 }
 
+div#additionalInfo {
+    font-size: xx-small;
+    padding-bottom: 5px;
+}
+
 a.link{
 	color: #B71F1F;
 }
