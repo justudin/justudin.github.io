@@ -19,6 +19,7 @@ a.link{
 	color: #B71F1F;
 }
 
+
 @keyframes animatedBackground {
 	0% {
 		background-image: url('img/background_1.webp');

@@ -166,7 +166,9 @@ const fethMetrics = async () => {
 fethMetrics()
 
 const metricnotes = document.getElementById('metricnotes');
-metricnotes.innerHTML = "<p class='pt-4 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate' target='_blank'>Google Scholar.</a></p>";
+metricnotes.innerHTML += '<iframe src="https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/works/chart" frameborder="0" style="width:100%;height:200px"></iframe>';
+//metricnotes.innerHTML += "<p class='pt-1 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate' target='_blank'>Google Scholar.</a></p>";
+
 
 //recentUpdates
 const fetchUpdates = async () => {
