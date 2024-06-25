@@ -28,7 +28,7 @@ const fethWorks = async () => {
             animateLoading.classList.remove('animate-pulse');
             workCount.classList.remove('bg-gray-300');
             workCount.classList.add('bg-red-800');
-            tblTitle.innerHTML = workItems.total_papers + "* Publications (Citations: "+ workItems.total_citations+", H-index: "+ workItems.hindex+")";
+            tblTitle.innerHTML = workItems.total_papers + " Publications* <span class='hidden lg:block'>(Citations: "+ workItems.total_citations+", H-index: "+ workItems.hindex+")</span>";
             workCount.innerHTML = "<button id='detailPublications'>" + workItems.total_papers + "* Publications</button>";
 
             footerInfo.innerHTML = '<p class="italic">*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href="https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar</a>. Generated as of ' + workItems.updated + '.</p>';
@@ -90,7 +90,7 @@ const fethReviews = async () => {
             animateLoading.classList.remove('animate-pulse');
             totalReviews.classList.remove('bg-gray-300');
             totalReviews.classList.add('bg-red-800');
-            tblReviewTitle.innerHTML = workItems.total_reviews + "* Verified peer reviews (Total outlets: "+ workItems.total_outlets+")";
+            tblReviewTitle.innerHTML = workItems.total_reviews + " Verified peer reviews* <span class='hidden lg:block'>(Total outlets: "+ workItems.total_outlets+")</span>";
             totalReviews.innerHTML = "<button id='detailReviews'>" + workItems.total_reviews+ "* Reviews</button>";
 
             const modalreview = document.getElementById("my-total-review-modal");
