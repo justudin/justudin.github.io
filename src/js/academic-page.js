@@ -16,7 +16,7 @@ yearofexplabel.innerHTML= yearofexp;
 
 const fethWorks = async () => {
     try {
-        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/works');
+        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/googlescholar.json');
         const workItems = response.data;
         //console.log(workItems)
         const animateLoading = document.getElementById('animateLoading');
@@ -31,7 +31,7 @@ const fethWorks = async () => {
             tblTitle.innerHTML = workItems.total_papers + " Publications* <span class='hidden lg:block'>(Citations: "+ workItems.total_citations+", H-index: "+ workItems.hindex+")</span>";
             workCount.innerHTML = "<button id='detailPublications'>" + workItems.total_papers + "* Publications</button>";
 
-            footerInfo.innerHTML = '<p class="italic">*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href="https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar</a>. Generated as of ' + workItems.updated + '.</p>';
+            footerInfo.innerHTML = '<p class="italic">*This data was obtained from <a href="'+workItems.gs_id+'" target="_blank">Google Scholar</a>. Generated as of ' + workItems.updated + '.</p>';
             const modalpub = document.getElementById("my-modal-publications");
             const btnOpen = document.getElementById("detailPublications");
             const btnClose = document.getElementById("ok-btn-publications");
@@ -57,7 +57,7 @@ const fethWorks = async () => {
             let dtTble = "";
             let no = workItems.data.length;
             for (var i = 0; i < workItems.data.length; i++) {
-                dtTble += "<tr class='border'><td>" + no + "</td><td class='text-left'><a href='https://doi.org/" + workItems.data[i]["doi"] + "' target='_blank'>" + workItems.data[i]["title"] + "</a></td><td>" + workItems.data[i]["year"] + "</td><td class='hidden lg:block'>" + workItems.data[i]["type"] + "</td><td><a href='https://scholar.google.com/scholar_lookup?doi=" + workItems.data[i]["doi"] + "' target='_blank'>" + workItems.data[i]["citation"] + "</a></td></tr>"
+                dtTble += "<tr class='border'><td>" + no + "</td><td class='text-left'><a href='" + workItems.data[i]["gs_view"] + "' target='_blank'>" + workItems.data[i]["title"] + "</a></td><td>" + workItems.data[i]["year"] + "</td><td><a href='" + workItems.data[i]["gs_link"] + "' target='_blank'>" + workItems.data[i]["citation"] + "</a></td></tr>"
                 no -= 1;
             }
             tblPub.innerHTML = dtTble;
@@ -79,7 +79,7 @@ fethWorks();
 
 const fethReviews = async () => {
     try {
-        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/reviews');
+        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/reviews.json');
         const workItems = response.data;
         //console.log(workItems)
         const animateLoading = document.getElementById('animateLoading');
@@ -136,7 +136,7 @@ fethReviews();
 
 const fethMetrics = async () => {
     try {
-        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/reviews');
+        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/reviews.json');
         const workItems = response.data;
 
         if (workItems) {
@@ -167,14 +167,14 @@ const fethMetrics = async () => {
 fethMetrics()
 
 const metricnotes = document.getElementById('metricnotes');
-metricnotes.innerHTML += '<iframe src="https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/works/chart" frameborder="0" style="width:100%;height:360px"></iframe>';
+metricnotes.innerHTML += '<iframe src="https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/googlescholar.chart" frameborder="0" style="width:100%;height:360px"></iframe>';
 //metricnotes.innerHTML += "<p class='pt-1 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate' target='_blank'>Google Scholar.</a></p>";
 
 //recentUpdates
 const fetchUpdates = async () => {
     try {
             const recentData = document.getElementById('recentUpdates');
-            const response = await axios.get('https://research.muhammadsyafrudin.com/updates/rss.xml');
+            const response = await axios.get('https://aintlab.com/updates/rss.xml');
             const rssdataxml = response.data;
             const updatedata = fromXML(rssdataxml);
             const recentupdates = updatedata.rss.channel.item.slice(0, 4);
@@ -183,7 +183,7 @@ const fetchUpdates = async () => {
             for (var i = 0; i < recentupdates.length; i++) {
                 updates += "[<a href='"+recentupdates[i].link+"' target='_blank' class='link' data-tippy-content='View this update'>"+ recentupdates[i].title + "</a>], "
             }
-            updates += "<a href='https://research.muhammadsyafrudin.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>[All updates].</a>";
+            updates += "<a href='https://aintlab.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>[All updates].</a>";
             recentData.innerHTML = "Recent updates: "+updates;
 
         } catch (errors) {
