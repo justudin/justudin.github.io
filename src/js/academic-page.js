@@ -1,6 +1,7 @@
 /* academic-page v0.1.1 | (c) 2022 by Muhammad Syafrudin */
 
 const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual ORCID
+const API_BACKEND_URL = "http://s.aintlab.com"; // change this with your API_BACKEND_URL
 
 let tblMetrics = document.getElementById("dtMetrics");
 tblMetrics.classList.add("text-xs");
@@ -16,7 +17,7 @@ yearofexplabel.innerHTML= yearofexp;
 
 const fethWorks = async () => {
     try {
-        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/googlescholar.json');
+        const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/googlescholar.json');
         const workItems = response.data;
         //console.log(workItems)
         const animateLoading = document.getElementById('animateLoading');
@@ -31,7 +32,7 @@ const fethWorks = async () => {
             tblTitle.innerHTML = workItems.total_papers + " Publications* <span class='hidden lg:block'>(Citations: "+ workItems.total_citations+", H-index: "+ workItems.hindex+")</span>";
             workCount.innerHTML = "<button id='detailPublications'>" + workItems.total_papers + "* Publications</button>";
 
-            footerInfo.innerHTML = '<p class="italic">*This data was obtained from <a href="'+workItems.gs_id+'" target="_blank">Google Scholar</a>. Generated as of ' + workItems.updated + '.</p>';
+            footerInfo.innerHTML = '<p class="italic">(*) This data was obtained from <a href="'+workItems.gs_id+'&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar</a>, while (**) this data was obtained from <a href="https://orcid.org/'+workItems.orcid+'" target="_blank">ORCID</a>. Generated as of ' + workItems.updated + '.</p>';
             const modalpub = document.getElementById("my-modal-publications");
             const btnOpen = document.getElementById("detailPublications");
             const btnClose = document.getElementById("ok-btn-publications");
@@ -40,10 +41,13 @@ const fethWorks = async () => {
             const workCountText = document.getElementById("workCountText");
             const citedCount = document.getElementById("citedCount");
 
+            const citationSource = document.getElementById("citationSource");
+            citationSource.innerHTML = '<a href="'+workItems.gs_id+'&view_op=list_works&sortby=pubdate" target="_blank" class="link" target="_blank" data-tippy-content="Visit Google Scholar page">Google Scholar</a>';
+
             //add the metrics
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total publications</td><td>"+ workItems.total_papers +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total citations</td><td>"+ workItems.total_citations +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>H-index</td><td>"+ workItems.hindex +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total publications*</td><td>"+ workItems.total_papers +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total citations*</td><td>"+ workItems.total_citations +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>H-index*</td><td>"+ workItems.hindex +"</td></tr>";
 
             btnOpen.onclick = function () {
                 modalreview.style.display = "none";
@@ -79,7 +83,7 @@ fethWorks();
 
 const fethReviews = async () => {
     try {
-        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/reviews.json');
+        const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/reviews.json');
         const workItems = response.data;
         //console.log(workItems)
         const animateLoading = document.getElementById('animateLoading');
@@ -90,8 +94,8 @@ const fethReviews = async () => {
             animateLoading.classList.remove('animate-pulse');
             totalReviews.classList.remove('bg-gray-300');
             totalReviews.classList.add('bg-red-800');
-            tblReviewTitle.innerHTML = workItems.total_reviews + " Verified peer reviews* <span class='hidden lg:block'>(Total outlets: "+ workItems.total_outlets+")</span>";
-            totalReviews.innerHTML = "<button id='detailReviews'>" + workItems.total_reviews+ "* Reviews</button>";
+            tblReviewTitle.innerHTML = workItems.total_reviews + " Verified peer reviews** <span class='hidden lg:block'>(Total outlets: "+ workItems.total_outlets+")</span>";
+            totalReviews.innerHTML = "<button id='detailReviews'>" + workItems.total_reviews+ "** Reviews</button>";
 
             const modalreview = document.getElementById("my-total-review-modal");
             const btnOpenReview = document.getElementById("detailReviews");
@@ -119,8 +123,8 @@ const fethReviews = async () => {
             }
             tblPubReview.innerHTML = dtTbleReview;
 
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total verified reviews</td><td>"+ workItems.total_reviews +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total served outlets</td><td>"+ workItems.total_outlets +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total verified reviews**</td><td>"+ workItems.total_reviews +"</td></tr>";
+            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total served outlets**</td><td>"+ workItems.total_outlets +"</td></tr>";
             outletCount.innerHTML = workItems.total_outlets;
             //console.log(dtTble);
         }
@@ -136,7 +140,7 @@ fethReviews();
 
 const fethMetrics = async () => {
     try {
-        const response = await axios.get('https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/reviews.json');
+        const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/reviews.json');
         const workItems = response.data;
 
         if (workItems) {
@@ -167,7 +171,7 @@ const fethMetrics = async () => {
 fethMetrics()
 
 const metricnotes = document.getElementById('metricnotes');
-metricnotes.innerHTML += '<iframe src="https://api.muhammadsyafrudin.com/orcid/'+YOUR_ORCID+'/googlescholar.chart" frameborder="0" style="width:100%;height:360px"></iframe>';
+metricnotes.innerHTML += '<iframe src="'+API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/googlescholar.chart" frameborder="0" style="width:100%;height:280px"></iframe>';
 //metricnotes.innerHTML += "<p class='pt-1 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate' target='_blank'>Google Scholar.</a></p>";
 
 //recentUpdates
