@@ -1,7 +1,7 @@
 /* academic-page v0.1.1 | (c) 2022 by Muhammad Syafrudin */
 
 const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual ORCID
-const API_BACKEND_URL = "http://s.aintlab.com"; // change this with your API_BACKEND_URL
+const API_BACKEND_URL = "https://s.aintlab.com"; // change this with your API_BACKEND_URL
 
 let tblMetrics = document.getElementById("dtMetrics");
 tblMetrics.classList.add("text-xs");
