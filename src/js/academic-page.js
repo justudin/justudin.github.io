@@ -2,6 +2,7 @@
 
 const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual ORCID
 const API_BACKEND_URL = "https://s.aintlab.com"; // change this with your API_BACKEND_URL
+const YOUR_GS_ID = "WLTzkOMAAAAJ"
 
 let tblMetrics = document.getElementById("dtMetrics");
 tblMetrics.classList.add("text-xs");
@@ -17,7 +18,8 @@ yearofexplabel.innerHTML= yearofexp;
 
 const fethWorks = async () => {
     try {
-        const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/googlescholar.json');
+        //const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/googlescholar.json'); //old API not work.
+        const response = await axios.get(API_BACKEND_URL+'/authorid/'+YOUR_GS_ID+'.json'); //new API works.
         const workItems = response.data;
         //console.log(workItems)
         const animateLoading = document.getElementById('animateLoading');
@@ -171,7 +173,7 @@ const fethMetrics = async () => {
 fethMetrics()
 
 const metricnotes = document.getElementById('metricnotes');
-metricnotes.innerHTML += '<iframe src="'+API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/googlescholar.chart" frameborder="0" style="width:100%;height:280px"></iframe>';
+metricnotes.innerHTML += '<iframe src="'+API_BACKEND_URL+'/authorid/'+YOUR_GS_ID+'.chart" frameborder="0" style="width:100%;height:280px"></iframe>';
 //metricnotes.innerHTML += "<p class='pt-1 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate' target='_blank'>Google Scholar.</a></p>";
 
 //recentUpdates
