@@ -1,13 +1,43 @@
-.myprofile {
-	-webkit-background-size: cover;
-	-moz-background-size: cover;
-	-o-background-size: cover;
+/* Ensure html and body cover full height */
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow-x: hidden;
+}
+
+/* Create blurred background overlay */
+.myprofile::before {
+	content: '';
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: auto;
+	min-height: 100vh;
+	z-index: -1;
 	background-size: cover;
-	animation: animatedBackground 50s infinite;
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	filter: blur(8px);
+	-webkit-filter: blur(8px);
+	animation: animatedBackgroundBlur 50s infinite;
 	animation-delay: 0s;
 	-moz-animation: none;
-	-ms-animation: animatedBackground 50s infinite;
-	-webkit-animation: animatedBackground 50s infinite;
+	-ms-animation: animatedBackgroundBlur 50s infinite;
+	-webkit-animation: animatedBackgroundBlur 50s infinite;
+	transform: scale(1.1);
+	overflow: hidden;
+}
+
+.myprofile {
+	position: relative;
+	min-height: 100vh;
+	backdrop-filter: blur(2px);
+	-webkit-backdrop-filter: blur(2px);
+	overflow: visible;
+	z-index: 1;
 }
 
 div#additionalInfo {
@@ -19,8 +49,64 @@ a.link{
 	color: #B71F1F;
 }
 
+/* Scroll to top button */
+#scrollToTop {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	width: 50px;
+	height: 50px;
+	background: linear-gradient(135deg, #B71F1F, #991B1B);
+	color: white;
+	border: none;
+	border-radius: 50%;
+	cursor: pointer;
+	z-index: 1000;
+	display: none;
+	font-size: 18px;
+	font-weight: bold;
+	box-shadow: 0 4px 12px rgba(183, 31, 31, 0.3);
+	transition: all 0.3s ease;
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+}
+
+#scrollToTop:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 6px 20px rgba(183, 31, 31, 0.4);
+	background: linear-gradient(135deg, #991B1B, #7F1D1D);
+}
+
+#scrollToTop:active {
+	transform: translateY(-1px);
+}
+
+#scrollToTop.show {
+	display: block;
+	animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; transform: translateY(10px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
 
 @keyframes animatedBackground {
+	0% {
+		background-image: url('img/background_1.webp');
+	}
+
+	50% {
+		background-image: url('img/background_2.webp');
+	}
+
+	100% {
+		background-image: url('img/background_3.webp');
+	}
+}
+
+@keyframes animatedBackgroundBlur {
 	0% {
 		background-image: url('img/background_1.webp');
 	}

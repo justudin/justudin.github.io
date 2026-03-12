@@ -2,77 +2,84 @@
 
 const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual ORCID
 const API_BACKEND_URL = "https://s.aintlab.com"; // change this with your API_BACKEND_URL
-const YOUR_GS_ID = "WLTzkOMAAAAJ"
+const YOUR_GS_ID = "WLTzkOMAAAAJ";
 
-let tblMetrics = document.getElementById("dtMetrics");
-tblMetrics.classList.add("text-xs");
+// Cache DOM elements
+const elements = {
+    tblMetrics: document.getElementById("dtMetrics"),
+    yearofexp: document.getElementById("yearofexp"),
+    animateLoading: document.getElementById('animateLoading'),
+    workCount: document.getElementById('workCount'),
+    totalReviews: document.getElementById('totalReviews'),
+    footerInfo: document.getElementById('additionalInfo'),
+    tblTitle: document.getElementById('tblTitle'),
+    tblReviewTitle: document.getElementById('tblReviewTitle'),
+    workCountText: document.getElementById("workCountText"),
+    citedCount: document.getElementById("citedCount"),
+    citationSource: document.getElementById("citationSource"),
+    outletCount: document.getElementById("outletCount"),
+    metricnotes: document.getElementById('metricnotes'),
+    recentUpdates: document.getElementById('recentUpdates')
+};
 
+// Add styling to metrics table
+elements.tblMetrics.classList.add("text-xs");
+
+// Calculate years of experience
 const d = new Date();
-let curryear = d.getFullYear();
-
-let yearofexplabel = document.getElementById("yearofexp");
-const yearofexp = parseInt(curryear)-2014;
-//console.log(yearofexp+" "+curryear);
-
-yearofexplabel.innerHTML= yearofexp;
+const curryear = d.getFullYear();
+const yearofexp = curryear - 2014;
+elements.yearofexp.innerHTML = yearofexp;
 
 const fethWorks = async () => {
     try {
-        //const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/googlescholar.json'); //old API not work.
-        const response = await axios.get(API_BACKEND_URL+'/authorid/'+YOUR_GS_ID+'.json'); //new API works.
+        const response = await axios.get(`${API_BACKEND_URL}/authorid/${YOUR_GS_ID}.json`);
         const workItems = response.data;
-        //console.log(workItems)
-        const animateLoading = document.getElementById('animateLoading');
-        const workCount = document.getElementById('workCount');
-        const footerInfo = document.getElementById('additionalInfo');
-        const tblTitle = document.getElementById('tblTitle');
 
         if (workItems) {
-            animateLoading.classList.remove('animate-pulse');
-            workCount.classList.remove('bg-gray-300');
-            workCount.classList.add('bg-red-800');
-            tblTitle.innerHTML = workItems.total_papers + " Publications* <span class='hidden lg:block'>(Citations: "+ workItems.total_citations+", H-index: "+ workItems.hindex+")</span>";
-            workCount.innerHTML = "<button id='detailPublications'>" + workItems.total_papers + "* Publications</button>";
-
-            footerInfo.innerHTML = '<p class="italic">(*) This data was obtained from <a href="'+workItems.gs_id+'&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar</a>, while (**) this data was obtained from <a href="https://orcid.org/'+workItems.orcid+'" target="_blank">ORCID</a>. Generated as of ' + workItems.updated + '.</p>';
+            // Update loading animation
+            elements.animateLoading.classList.remove('animate-pulse');
+            elements.workCount.classList.remove('bg-gray-300');
+            elements.workCount.classList.add('bg-red-800');
+            
+            // Update content
+            elements.tblTitle.innerHTML = `${workItems.total_papers} Publications* <span class='hidden lg:block'>(Citations: ${workItems.total_citations}, H-index: ${workItems.hindex})</span>`;
+            elements.workCount.innerHTML = `<button id='detailPublications'>${workItems.total_papers}* Publications</button>`;
+            elements.footerInfo.innerHTML = `<p class="italic">(*) This data was obtained from <a href="${workItems.gs_id}&view_op=list_works&sortby=pubdate" target="_blank">Google Scholar</a>, while (**) this data was obtained from <a href="https://orcid.org/${workItems.orcid}" target="_blank">ORCID</a>. Generated as of ${workItems.updated}.</p>`;
+            
+            // Update citation source
+            elements.citationSource.innerHTML = `<a href="${workItems.gs_id}&view_op=list_works&sortby=pubdate" target="_blank" class="link" data-tippy-content="Visit Google Scholar page">Google Scholar</a>`;
+            
+            // Add metrics
+            elements.tblMetrics.innerHTML += `<tr class='border'><td>#</td><td class='text-left'>Total publications*</td><td>${workItems.total_papers}</td></tr>`;
+            elements.tblMetrics.innerHTML += `<tr class='border'><td>#</td><td class='text-left'>Total citations*</td><td>${workItems.total_citations}</td></tr>`;
+            elements.tblMetrics.innerHTML += `<tr class='border'><td>#</td><td class='text-left'>H-index*</td><td>${workItems.hindex}</td></tr>`;
+            
+            // Setup modal functionality
             const modalpub = document.getElementById("my-modal-publications");
             const btnOpen = document.getElementById("detailPublications");
             const btnClose = document.getElementById("ok-btn-publications");
             const modalreview = document.getElementById("my-total-review-modal");
             const modalmetrics = document.getElementById("my-metrics-modal");
-            const workCountText = document.getElementById("workCountText");
-            const citedCount = document.getElementById("citedCount");
 
-            const citationSource = document.getElementById("citationSource");
-            citationSource.innerHTML = '<a href="'+workItems.gs_id+'&view_op=list_works&sortby=pubdate" target="_blank" class="link" target="_blank" data-tippy-content="Visit Google Scholar page">Google Scholar</a>';
-
-            //add the metrics
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total publications*</td><td>"+ workItems.total_papers +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total citations*</td><td>"+ workItems.total_citations +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>H-index*</td><td>"+ workItems.hindex +"</td></tr>";
-
-            btnOpen.onclick = function () {
+            btnOpen.onclick = () => {
                 modalreview.style.display = "none";
                 modalmetrics.style.display = "none";
                 modalpub.style.display = "block";
-            }
-            btnClose.onclick = function () {
+            };
+            btnClose.onclick = () => {
                 modalpub.style.display = "none";
-            }
+            };
+            
+            // Build publications table
             const tblPub = document.getElementById("dtPublications");
-            let dtTble = "";
-            let no = workItems.data.length;
-            for (var i = 0; i < workItems.data.length; i++) {
-                dtTble += "<tr class='border'><td>" + no + "</td><td class='text-left'><a href='" + workItems.data[i]["gs_view"] + "' target='_blank'>" + workItems.data[i]["title"] + "</a></td><td>" + workItems.data[i]["year"] + "</td><td><a href='" + workItems.data[i]["gs_link"] + "' target='_blank'>" + workItems.data[i]["citation"] + "</a></td></tr>"
-                no -= 1;
-            }
+            let dtTble = workItems.data.map((item, index) => 
+                `<tr class='border'><td>${workItems.data.length - index}</td><td class='text-left'><a href='${item.gs_view}' target='_blank'>${item.title}</a></td><td>${item.year}</td><td><a href='${item.gs_link}' target='_blank'>${item.citation}</a></td></tr>`
+            ).join('');
             tblPub.innerHTML = dtTble;
-            //console.log(dtTble);
 
-            workCountText.innerHTML = workItems.total_papers;
-            citedCount.innerHTML = workItems.total_citations;
-
-
+            elements.workCountText.innerHTML = workItems.total_papers;
+            elements.citedCount.innerHTML = workItems.total_citations;
         }
         return workItems;
     } catch (errors) {
@@ -85,50 +92,43 @@ fethWorks();
 
 const fethReviews = async () => {
     try {
-        const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/reviews.json');
+        const response = await axios.get(`${API_BACKEND_URL}/orcid/${YOUR_ORCID}/reviews.json`);
         const workItems = response.data;
-        //console.log(workItems)
-        const animateLoading = document.getElementById('animateLoading');
-        const totalReviews = document.getElementById('totalReviews');
-        const tblReviewTitle = document.getElementById('tblReviewTitle');
 
         if (workItems) {
-            animateLoading.classList.remove('animate-pulse');
-            totalReviews.classList.remove('bg-gray-300');
-            totalReviews.classList.add('bg-red-800');
-            tblReviewTitle.innerHTML = workItems.total_reviews + " Verified peer reviews** <span class='hidden lg:block'>(Total outlets: "+ workItems.total_outlets+")</span>";
-            totalReviews.innerHTML = "<button id='detailReviews'>" + workItems.total_reviews+ "** Reviews</button>";
+            elements.animateLoading.classList.remove('animate-pulse');
+            elements.totalReviews.classList.remove('bg-gray-300');
+            elements.totalReviews.classList.add('bg-red-800');
+            elements.tblReviewTitle.innerHTML = `${workItems.total_reviews} Verified peer reviews** <span class='hidden lg:block'>(Total outlets: ${workItems.total_outlets})</span>`;
+            elements.totalReviews.innerHTML = `<button id='detailReviews'>${workItems.total_reviews}** Reviews</button>`;
 
+            // Setup modal functionality
             const modalreview = document.getElementById("my-total-review-modal");
             const btnOpenReview = document.getElementById("detailReviews");
             const btnCloseReview = document.getElementById("ok-btn-reviews");
             const modalpub = document.getElementById("my-modal-publications");
             const modalmetrics = document.getElementById("my-metrics-modal");
 
-            const outletCount = document.getElementById("outletCount");
-
-
-            btnOpenReview.onclick = function () {
+            btnOpenReview.onclick = () => {
                 modalpub.style.display = "none";
                 modalmetrics.style.display = "none";
                 modalreview.style.display = "block";
-            }
-            btnCloseReview.onclick = function () {
+            };
+            btnCloseReview.onclick = () => {
                 modalreview.style.display = "none";
-            }
+            };
+            
+            // Build reviews table
             const tblPubReview = document.getElementById("dtReviews");
-            let dtTbleReview = "";
-            let no = workItems.data.length;
-            for (var i = 0; i < workItems.data.length; i++) {
-                dtTbleReview += "<tr class='border'><td>" + no + "</td><td class='text-left'><a href='https://portal.issn.org/resource/ISSN/" + workItems.data[i]["issn"] + "' target='_blank'>" + workItems.data[i]["outlet"] + " ("+workItems.data[i]["issn"]+")</a></td><td>" + workItems.data[i]["reviews"] + "</td></tr>"
-                no -= 1;
-            }
+            let dtTbleReview = workItems.data.map((item, index) => 
+                `<tr class='border'><td>${workItems.data.length - index}</td><td class='text-left'><a href='https://portal.issn.org/resource/ISSN/${item.issn}' target='_blank'>${item.outlet} (${item.issn})</a></td><td>${item.reviews}</td></tr>`
+            ).join('');
             tblPubReview.innerHTML = dtTbleReview;
 
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total verified reviews**</td><td>"+ workItems.total_reviews +"</td></tr>";
-            tblMetrics.innerHTML += "<tr class='border'><td>#</td><td class='text-left'>Total served outlets**</td><td>"+ workItems.total_outlets +"</td></tr>";
-            outletCount.innerHTML = workItems.total_outlets;
-            //console.log(dtTble);
+            // Add metrics
+            elements.tblMetrics.innerHTML += `<tr class='border'><td>#</td><td class='text-left'>Total verified reviews**</td><td>${workItems.total_reviews}</td></tr>`;
+            elements.tblMetrics.innerHTML += `<tr class='border'><td>#</td><td class='text-left'>Total served outlets**</td><td>${workItems.total_outlets}</td></tr>`;
+            elements.outletCount.innerHTML = workItems.total_outlets;
         }
         return workItems;
     } catch (errors) {
@@ -138,31 +138,26 @@ const fethReviews = async () => {
 
 fethReviews();
 
-//metrics dtMetrics
-
 const fethMetrics = async () => {
     try {
-        const response = await axios.get(API_BACKEND_URL+'/orcid/'+YOUR_ORCID+'/reviews.json');
+        const response = await axios.get(`${API_BACKEND_URL}/orcid/${YOUR_ORCID}/reviews.json`);
         const workItems = response.data;
 
         if (workItems) {
-
             const modalmetrics = document.getElementById("my-metrics-modal");
             const btnOpenMetrics = document.getElementById("openMetrics");
             const btnCloseMetrics = document.getElementById("ok-btn-metrics");
             const modalpub = document.getElementById("my-modal-publications");
             const modalreview = document.getElementById("my-total-review-modal");
 
-            btnOpenMetrics.onclick = function () {
+            btnOpenMetrics.onclick = () => {
                 modalpub.style.display = "none";
                 modalreview.style.display = "none";
                 modalmetrics.style.display = "block";
-            }
-            btnCloseMetrics.onclick = function () {
+            };
+            btnCloseMetrics.onclick = () => {
                 modalmetrics.style.display = "none";
-            }
-
-
+            };
         }
         return workItems;
     } catch (errors) {
@@ -170,34 +165,39 @@ const fethMetrics = async () => {
     }
 };
 
-fethMetrics()
-
-const metricnotes = document.getElementById('metricnotes');
-metricnotes.innerHTML += '<iframe src="'+API_BACKEND_URL+'/authorid/'+YOUR_GS_ID+'.chart" frameborder="0" style="width:100%;height:280px"></iframe>';
-//metricnotes.innerHTML += "<p class='pt-1 text-left text-gray-500 text-xs ps-2 italic'>*This data are obtained from ORCID and Crossref (with valid Digital Object Identifier) independently, and may differ from <a href='https://scholar.google.co.kr/citations?hl=en&user=WLTzkOMAAAAJ&view_op=list_works&sortby=pubdate' target='_blank'>Google Scholar.</a></p>";
-
-//recentUpdates
 const fetchUpdates = async () => {
     try {
-            const recentData = document.getElementById('recentUpdates');
-            const response = await axios.get('https://aintlab.com/updates/rss.xml');
-            const rssdataxml = response.data;
-            const updatedata = fromXML(rssdataxml);
-            const recentupdates = updatedata.rss.channel.item.slice(0, 4);
-            //console.log(recentupdates);
-            let updates = "";
-            for (var i = 0; i < recentupdates.length; i++) {
-                updates += "[<a href='"+recentupdates[i].link+"' target='_blank' class='link' data-tippy-content='View this update'>"+ recentupdates[i].title + "</a>], "
-            }
-            updates += "<a href='https://aintlab.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>[All updates].</a>";
-            recentData.innerHTML = "Recent updates: "+updates;
-
-        } catch (errors) {
+        const response = await axios.get('https://aintlab.com/updates/rss.xml');
+        const rssdataxml = response.data;
+        const updatedata = fromXML(rssdataxml);
+        const recentupdates = updatedata.rss.channel.item.slice(0, 4);
+        
+        let updates = recentupdates.map(item => 
+            `[<a href='${item.link}' target='_blank' class='link' data-tippy-content='View this update'>${item.title}</a>]`
+        ).join(', ');
+        
+        updates += ", <a href='https://aintlab.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>[All updates].</a>";
+        elements.recentUpdates.innerHTML = "Recent updates: " + updates;
+    } catch (errors) {
         console.error(errors);
     }
 };
 
-fetchUpdates();
+// Initialize everything
+const init = async () => {
+    elements.metricnotes.innerHTML += `<iframe src="${API_BACKEND_URL}/authorid/${YOUR_GS_ID}.chart" frameborder="0" style="width:100%;height:280px"></iframe>`;
+    
+    // Run all fetch operations
+    await Promise.all([
+        fethWorks(),
+        fethReviews(),
+        fethMetrics(),
+        fetchUpdates()
+    ]);
+};
+
+// Start the application
+init();
 
 const yearbuild = document.getElementById("yearbuild");
 yearbuild.innerHTML = new Date().getFullYear();
