@@ -47,6 +47,31 @@ div#additionalInfo {
 
 a.link{
 	color: #B71F1F;
+	font-weight: 600;
+}
+
+a.link:hover {
+	color: #7F1D1D;
+	text-decoration: underline;
+}
+
+/* Enhanced text contrast for accessibility */
+.text-gray-500 {
+	color: #374151 !important; /* Darker gray for better contrast */
+}
+
+.text-gray-600 {
+	color: #1F2937 !important; /* Much darker gray for accessibility */
+}
+
+/* Ensure sufficient contrast for all gray text variants */
+.text-gray-400 {
+	color: #4B5563 !important;
+}
+
+/* Social media icons with better contrast */
+.text-gray-600:hover {
+	color: #7F1D1D !important;
 }
 
 /* Scroll to top button */
