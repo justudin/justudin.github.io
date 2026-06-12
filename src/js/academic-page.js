@@ -87,7 +87,8 @@ const fethWorks = async () => {
     }
 };
 
-fethWorks();
+
+/*fethWorks();*/
 
 
 const fethReviews = async () => {
@@ -136,7 +137,7 @@ const fethReviews = async () => {
     }
 };
 
-fethReviews();
+/*fethReviews();*/
 
 const fethMetrics = async () => {
     try {
@@ -183,15 +184,43 @@ const fetchUpdates = async () => {
     }
 };
 
+const fethReviews_Simple = async () => {
+    try {
+        const response = await axios.get(`${API_BACKEND_URL}/orcid/${YOUR_ORCID}/reviews.json`);
+        const workItems = response.data;
+
+        if (workItems) {
+            elements.outletCount.innerHTML = workItems.total_outlets;
+        }
+        return workItems;
+    } catch (errors) {
+        console.error(errors);
+    }
+};
+
+const fethWorks_Simple = async () => {
+    try {
+        const response = await axios.get(`${API_BACKEND_URL}/authorid/${YOUR_GS_ID}.json`);
+        const workItems = response.data;
+
+        if (workItems) {
+            elements.workCountText.innerHTML = workItems.total_papers;
+            elements.citedCount.innerHTML = workItems.total_citations;
+        }
+        return workItems;
+    } catch (errors) {
+        console.error(errors);
+    }
+};
+
 // Initialize everything
 const init = async () => {
     elements.metricnotes.innerHTML += `<iframe src="${API_BACKEND_URL}/authorid/${YOUR_GS_ID}.chart" frameborder="0" style="width:100%;height:280px"></iframe>`;
     
     // Run all fetch operations
     await Promise.all([
-        fethWorks(),
-        fethReviews(),
-        fethMetrics(),
+        fethWorks_Simple(),
+        fethReviews_Simple(),
         fetchUpdates()
     ]);
 };
@@ -211,10 +240,11 @@ tippy('.link', {
 const toggle = document.querySelector('.js-change-theme');
 const body = document.querySelector('body');
 const profile = document.getElementById('profile');
+/*
 const modalreview = document.getElementById("my-total-review-modal");
 const modalpub = document.getElementById("my-modal-publications");
 const modalmetrics = document.getElementById("my-metrics-modal");
-
+*/
 toggle.addEventListener('click', () => {
     if (body.classList.contains('text-gray-900')) {
         toggle.innerHTML = "🌞";
@@ -222,23 +252,27 @@ toggle.addEventListener('click', () => {
         body.classList.add('text-gray-100');
         profile.classList.remove('bg-white');
         profile.classList.add('bg-gray-900');
+        /*
         modalreview.classList.remove('bg-white');
         modalreview.classList.add('bg-gray-900');
         modalpub.classList.remove('bg-white');
         modalpub.classList.add('bg-gray-900');
         modalmetrics.classList.remove('bg-white');
         modalmetrics.classList.add('bg-gray-900');
+        */
     } else {
         toggle.innerHTML = "🌛";
         body.classList.remove('text-gray-100');
         body.classList.add('text-gray-900');
         profile.classList.remove('bg-gray-900');
         profile.classList.add('bg-white');
+        /*
         modalreview.classList.remove('bg-gray-900');
         modalreview.classList.add('bg-white');
         modalpub.classList.remove('bg-gray-900');
         modalpub.classList.add('bg-white');
         modalmetrics.classList.remove('bg-gray-900');
         modalmetrics.classList.add('bg-white');
+        */
     }
 });
