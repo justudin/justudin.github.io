@@ -88,7 +88,7 @@ gulp.task('clean', async () => {
 
 // Start session
 gulp.task("session-start", (cb) => {
-    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'build-img', 'build-html','copy-redirect', 'copy-nojekyll', 'copy-robots')(cb);
+    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'build-img', 'build-html','copy-redirect', 'copy-robots')(cb);
 });
 
 gulp.task('default', gulp.series('session-start'));
