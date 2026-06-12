@@ -70,10 +70,12 @@ gulp.task('copy-redirect', () =>
         .pipe(gulp.dest('docs'))
 );
 
+/*
 gulp.task('copy-nojekyll', () =>
     gulp.src('src/.nojekyll')
         .pipe(gulp.dest('docs'))
 );
+*/
 
 gulp.task('copy-robots', () =>
     gulp.src('src/robots.txt')
