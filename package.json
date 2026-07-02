@@ -17,6 +17,7 @@
   "author": "Muhammad Syafrudin",
   "license": "MIT",
   "dependencies": {
+    "serve": "^14.2.6",
     "tailwindcss": "^2.2.19"
   },
   "scripts": {
