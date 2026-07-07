@@ -44,6 +44,13 @@ gulp.task('build-js', function () {
         .pipe(gulp.dest('docs/js'));
 });
 
+// three.js is lazy-loaded by academic-page.js, so it is copied
+// standalone instead of being concatenated into vendor.js
+gulp.task('copy-three', () =>
+    gulp.src('src/js/three.min.js')
+        .pipe(gulp.dest('docs/js'))
+);
+
 gulp.task('build-img', () =>
     gulp.src('src/img/*.{jpg,jpeg,png}')
         .pipe(webp({quality: 80}))
@@ -88,7 +95,7 @@ gulp.task('clean', async () => {
 
 // Start session
 gulp.task("session-start", (cb) => {
-    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'build-img', 'build-html','copy-redirect', 'copy-robots')(cb);
+    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'copy-three', 'build-img', 'build-html','copy-redirect', 'copy-robots')(cb);
 });
 
 gulp.task('default', gulp.series('session-start'));
