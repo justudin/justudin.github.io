@@ -37,10 +37,12 @@ html {
 	--grad-a: #0047BB;
 	--grad-b: #0090FF;
 	/* three.js scene palette (parsed by academic-page.js) */
+	--bg-2-fade: rgba(247, 250, 255, 0);   /* --bg-2 at zero alpha, for hero scrim */
 	--scene-node: #0047BB;
 	--scene-line: #3F7AD6;
 	--scene-signal: #0090FF;
 	--scene-dust: #9FBDEB;
+	--scene-hot: #00B894;   /* winning-class / attention highlight */
 }
 
 html.dark {
@@ -64,10 +66,12 @@ html.dark {
 	--tl-ring: rgba(77, 141, 255, 0.18);
 	--grad-a: #4D8DFF;
 	--grad-b: #7DD3FC;
+	--bg-2-fade: rgba(11, 23, 48, 0);   /* --bg-2 at zero alpha, for hero scrim */
 	--scene-node: #4D8DFF;
 	--scene-line: #2E5FB8;
 	--scene-signal: #A8CCFF;
 	--scene-dust: #1E3A6E;
+	--scene-hot: #2EEBC0;
 }
 
 /* ---------- Page background: gradient + dot grid ---------- */
@@ -119,7 +123,22 @@ a.link:hover {
 	width: 100%;
 	height: 100%;
 	pointer-events: none;
-	background: linear-gradient(180deg, transparent 60%, var(--bg-2) 100%);
+	/* opaque scrim fully backs the text zone (top ~50%), then clears for the
+	   ViT band below; a short bottom fade blends the scene into the page */
+	/* ViT sits up top (clear), text sits below (opaque backing from the bottom);
+	   a small top fade tucks the scene under the nav */
+	background:
+		linear-gradient(0deg, var(--bg-2) 0%, var(--bg-2) 46%, var(--bg-2-fade) 60%),
+		linear-gradient(180deg, var(--bg-2) 0%, var(--bg-2-fade) 8%);
+}
+
+/* narrow screens stack a taller text block, so the scrim covers more */
+@media (max-width: 640px) {
+	.hero-veil {
+		background:
+			linear-gradient(0deg, var(--bg-2) 0%, var(--bg-2) 42%, var(--bg-2-fade) 58%),
+			linear-gradient(180deg, var(--bg-2) 0%, var(--bg-2-fade) 8%);
+	}
 }
 
 .hero-nav {
@@ -154,18 +173,20 @@ a.link:hover {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	/* ViT first: the large TOP padding reserves the upper band for the raised
+	   pipeline, and the text block is centred in the region below it */
 	justify-content: center;
 	text-align: center;
-	padding: 1rem 1.25rem 5rem;
+	padding: 44vh 1.25rem clamp(3rem, 8vh, 6rem);
 }
 
 .hero-eyebrow {
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.28em;
+	font-size: clamp(1.05rem, 2.6vw, 1.55rem);
+	font-weight: 800;
+	letter-spacing: 0.05em;
 	text-transform: uppercase;
-	color: var(--muted);
-	margin-bottom: 1.1rem;
+	color: var(--heading);
+	margin-bottom: 0.9rem;
 }
 
 .hero-title {
@@ -226,8 +247,8 @@ a.link:hover {
 
 .stat-label {
 	display: block;
-	margin-top: 0.15rem;
-	font-size: 0.62rem;
+	margin-top: 0.2rem;
+	font-size: 0.72rem;
 	font-weight: 700;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
@@ -338,25 +359,37 @@ a.link:hover {
 	box-shadow: var(--card-shadow);
 }
 
-/* Focus cards */
-.focus-grid {
+/* Research areas — four-column domain register with icons */
+.research-lead {
+	margin: -0.6rem 0 1.5rem;
+	max-width: 46rem;
+	font-size: 1.05rem;
+	line-height: 1.65;
+	color: var(--muted);
+}
+
+.research-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+	grid-template-columns: repeat(4, 1fr);
 	gap: 1rem;
 }
 
-.focus-card {
-	padding: 1.5rem;
+@media (max-width: 900px) {
+	.research-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 540px) {
+	.research-grid { grid-template-columns: 1fr; }
+}
+
+.research-item {
+	position: relative;
+	padding: 1.5rem 1.35rem 1.5rem 1.55rem;
+	overflow: hidden;
 	transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
-.focus-card:hover {
-	transform: translateY(-4px);
-	border-color: var(--accent-soft);
-	box-shadow: 0 16px 40px -14px var(--btn-glow);
-}
-
-.focus-icon {
+.research-icon {
 	width: 2.6rem;
 	height: 2.6rem;
 	border-radius: 3px;
@@ -365,10 +398,59 @@ a.link:hover {
 	justify-content: center;
 	background: var(--icon-bg);
 	color: var(--accent);
-	margin-bottom: 0.9rem;
+	margin-bottom: 1rem;
 }
 
-.focus-icon svg { width: 1.35rem; height: 1.35rem; }
+.research-icon svg { width: 1.4rem; height: 1.4rem; }
+
+.research-item::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background: linear-gradient(180deg, var(--grad-a), var(--grad-b));
+	opacity: 0.55;
+	transition: opacity 0.25s ease, width 0.25s ease;
+}
+
+.research-item:hover {
+	transform: translateY(-4px);
+	border-color: var(--accent-soft);
+	box-shadow: 0 16px 40px -14px var(--btn-glow);
+}
+
+.research-item:hover::before {
+	opacity: 1;
+	width: 5px;
+}
+
+.research-index {
+	display: block;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.22em;
+	color: var(--accent);
+	opacity: 0.85;
+	margin-bottom: 0.6rem;
+}
+
+.research-name {
+	font-size: 1.02rem;
+	font-weight: 800;
+	letter-spacing: -0.01em;
+	line-height: 1.25;
+	color: var(--heading);
+	margin-bottom: 0.45rem;
+}
+
+.research-desc {
+	font-size: 0.925rem;
+	line-height: 1.6;
+	color: var(--muted);
+}
 
 /* Timeline */
 .timeline {
@@ -423,5 +505,5 @@ a.link:hover {
 	html { scroll-behavior: auto; }
 	.reveal { opacity: 1; transform: none; transition: none; }
 	.scroll-cue { animation: none; }
-	.btn, .focus-card { transition: none; }
+	.btn, .research-item { transition: none; }
 }

@@ -136,7 +136,11 @@ if (!REDUCED_MOTION && 'IntersectionObserver' in window) {
 }
 
 /* ============================================================
-   Applied Intelligence — three.js neural network hero
+   Applied Intelligence — three.js Vision-Transformer hero
+   A living ViT pipeline: an input image is split into patches,
+   linearly projected + positionally embedded into a token
+   sequence, contextualised by multi-head self-attention, then
+   the [CLS] token is read out by an MLP head into class scores.
    three.min.js is lazy-loaded so the initial paint stays fast;
    if WebGL or the script fails, the hero quietly falls back to
    the CSS gradient background.
@@ -172,45 +176,32 @@ function buildAintelScene(canvas) {
     camera.position.set(0, 0, 30);
 
     const small = window.innerWidth < 640;
-    // classic MLP architecture: input → hidden ×2 → output
-    const LAYERS = small ? [3, 5, 5, 2] : [4, 7, 7, 3];
-    const LAYER_X = small ? [-9, -3, 3, 9] : [-15, -5, 5, 15];
-    const SPREAD = small ? 5.5 : 8;
-    const SIGNAL_COUNT = small ? 14 : 26;
-    const DUST_COUNT = small ? 50 : 90;
 
-    /* --- nodes laid out as a readable network diagram: even vertical
-       spacing shared across layers, only a whisper of jitter --- */
-    const maxLayer = Math.max.apply(null, LAYERS);
-    const gapY = (2 * SPREAD) / (maxLayer - 1);
-    const nodePos = [];
-    const nodeMix = []; // 0 at input layer → 1 at output layer
-    LAYERS.forEach((count, li) => {
-        for (let i = 0; i < count; i++) {
-            const y = (i - (count - 1) / 2) * gapY + (Math.random() - 0.5) * 0.5;
-            const z = (Math.random() - 0.5) * 2;
-            nodePos.push(LAYER_X[li] + (Math.random() - 0.5) * 0.6, y, z);
-            nodeMix.push(li / (LAYERS.length - 1));
-        }
-    });
-
-    /* --- edges: fully connected between adjacent layers --- */
-    const edges = [];
-    let offset = 0;
-    for (let li = 0; li < LAYERS.length - 1; li++) {
-        const nextOffset = offset + LAYERS[li];
-        for (let i = 0; i < LAYERS[li]; i++) {
-            for (let j = 0; j < LAYERS[li + 1]; j++) {
-                edges.push([offset + i, nextOffset + j]);
-            }
-        }
-        offset = nextOffset;
-    }
+    /* ===== Vision-Transformer pipeline layout (flows left → right) =====
+       INPUT IMAGE → PATCHES → PATCH + POSITION EMBED (token sequence)
+       → MULTI-HEAD SELF-ATTENTION (encoder ×N) → [CLS] → MLP HEAD
+       → OUTPUT class probabilities                                       */
+    const GRID = small ? 3 : 4;               // GRID×GRID image patches
+    const NPATCH = GRID * GRID;
+    const TILE = small ? 1.55 : 2.0;          // patch edge length
+    const EXPLODE = small ? 0.4 : 0.55;       // gap between exploded patches
+    const IMG_X = small ? -8.0 : -21;         // wider spread now the headline is gone
+    const SEQ_X = small ? -0.9 : -4;
+    const MLP_X = small ? 4.4 : 9;
+    const OUT_X = small ? 5.0 : 16;
+    const TOKEN_GAP = small ? 1.15 : 0.95;    // vertical spacing in the sequence
+    const MAXLEN = small ? 2.3 : 5.0;         // longest output probability bar
+    const PART_COUNT = small ? 16 : 30;       // patch → token embedding particles
+    const READ_COUNT = small ? 5 : 9;         // [CLS] → MLP → output particles
+    const DUST_COUNT = small ? 40 : 80;
+    const SCENE_Y = small ? 3.8 : 4.0;        // raise the pipeline into the hero's UPPER band,
+    //                                           with the identity text centred below it
 
     const group = new THREE.Group();
+    group.position.y = SCENE_Y;
     scene.add(group);
 
-    /* --- glow-sprite shader shared by nodes / signals / dust --- */
+    /* ---------- glow-sprite shader shared by tokens / particles / dust ---------- */
     const makePointsMaterial = (opts) => new THREE.ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
@@ -251,122 +242,325 @@ function buildAintelScene(canvas) {
         depthWrite: false
     });
 
-    const buildPoints = (positions, sizeMin, sizeMax, opacity) => {
+    const buildPoints = (positions, sizeMin, sizeMax, opacity, mix) => {
         const geo = new THREE.BufferGeometry();
         const n = positions.length / 3;
         const seeds = new Float32Array(n);
         const sizes = new Float32Array(n);
+        const mixes = new Float32Array(n);
         for (let i = 0; i < n; i++) {
             seeds[i] = Math.random();
             sizes[i] = sizeMin + Math.random() * (sizeMax - sizeMin);
+            mixes[i] = mix ? mix[i] : 0;
         }
         geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
         geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
         geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-        const mat = makePointsMaterial({ opacity });
-        return new THREE.Points(geo, mat);
+        geo.setAttribute('aMix', new THREE.BufferAttribute(mixes, 1));
+        return new THREE.Points(geo, makePointsMaterial({ opacity }));
     };
 
-    const nodes = buildPoints(nodePos, 2.0, 2.8, 0.95);
-    nodes.geometry.setAttribute('aMix', new THREE.BufferAttribute(new Float32Array(nodeMix), 1));
-    group.add(nodes);
+    /* ---------- procedural input image (canvas texture) ---------- */
+    const imgCanvas = document.createElement('canvas');
+    imgCanvas.width = imgCanvas.height = 256;
+    (() => {
+        const c = imgCanvas.getContext('2d');
+        const sky = c.createLinearGradient(0, 0, 0, 256);
+        sky.addColorStop(0.00, '#0b1e4d');
+        sky.addColorStop(0.42, '#2059a6');
+        sky.addColorStop(0.66, '#f0a35a');
+        sky.addColorStop(1.00, '#f7d78e');
+        c.fillStyle = sky; c.fillRect(0, 0, 256, 256);
+        // sun halo
+        const sun = c.createRadialGradient(184, 92, 3, 184, 92, 52);
+        sun.addColorStop(0, '#fff7e6'); sun.addColorStop(1, 'rgba(255,220,150,0)');
+        c.fillStyle = sun; c.beginPath(); c.arc(184, 92, 52, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#fff2cf'; c.beginPath(); c.arc(184, 92, 15, 0, Math.PI * 2); c.fill();
+        // layered mountain ridges
+        const ridge = (base, h, phase, col) => {
+            c.fillStyle = col; c.beginPath(); c.moveTo(0, 256);
+            for (let x = 0; x <= 256; x += 16) {
+                const y = base - Math.abs(Math.sin(x * 0.03 + phase)) * h;
+                c.lineTo(x, y);
+            }
+            c.lineTo(256, 256); c.closePath(); c.fill();
+        };
+        ridge(188, 58, 0.4, '#2b3f72');
+        ridge(210, 44, 2.1, '#212f57');
+        ridge(234, 32, 3.6, '#141d39');
+    })();
+    const imgTex = new THREE.CanvasTexture(imgCanvas);
+    imgTex.minFilter = THREE.LinearFilter;
 
-    /* --- connections --- */
-    const linePositions = new Float32Array(edges.length * 6);
-    edges.forEach(([a, b], i) => {
-        linePositions[i * 6] = nodePos[a * 3];
-        linePositions[i * 6 + 1] = nodePos[a * 3 + 1];
-        linePositions[i * 6 + 2] = nodePos[a * 3 + 2];
-        linePositions[i * 6 + 3] = nodePos[b * 3];
-        linePositions[i * 6 + 4] = nodePos[b * 3 + 1];
-        linePositions[i * 6 + 5] = nodePos[b * 3 + 2];
-    });
-    const lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-    const lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.25, depthWrite: false });
-    const lines = new THREE.LineSegments(lineGeo, lineMat);
-    group.add(lines);
+    /* ---------- patches: GRID×GRID textured tiles that explode ---------- */
+    const patches = [];
+    const patchEdgeMats = [];
+    const patchImg = [];    // assembled (full-image) position
+    const patchHome = [];   // exploded target position
+    const gridC = (GRID - 1) / 2;
+    for (let r = 0; r < GRID; r++) {
+        for (let col = 0; col < GRID; col++) {
+            const geo = new THREE.PlaneGeometry(TILE * 0.94, TILE * 0.94);
+            // remap UVs to this tile's window of the image
+            const u0 = col / GRID, u1 = (col + 1) / GRID;
+            const v0 = 1 - (r + 1) / GRID, v1 = 1 - r / GRID;
+            const uv = geo.getAttribute('uv');
+            uv.setXY(0, u0, v1); uv.setXY(1, u1, v1);
+            uv.setXY(2, u0, v0); uv.setXY(3, u1, v0);
+            uv.needsUpdate = true;
 
-    /* --- signals travelling along edges --- */
-    const signalState = [];
-    const signalPos = new Float32Array(SIGNAL_COUNT * 3);
-    for (let i = 0; i < SIGNAL_COUNT; i++) {
-        signalState.push({
-            edge: Math.floor(Math.random() * edges.length),
-            t: Math.random(),
-            speed: 0.25 + Math.random() * 0.5
-        });
+            const mat = new THREE.MeshBasicMaterial({ map: imgTex, transparent: true, opacity: 0.97 });
+            const mesh = new THREE.Mesh(geo, mat);
+            const cx = col - gridC, cy = gridC - r;
+            patchImg.push(new THREE.Vector3(IMG_X + cx * TILE, cy * TILE, 0));
+            patchHome.push(new THREE.Vector3(
+                IMG_X + cx * (TILE + EXPLODE),
+                cy * (TILE + EXPLODE),
+                (Math.random() - 0.5) * 1.4
+            ));
+            mesh.position.copy(patchImg[patchImg.length - 1]);
+
+            const edgeMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
+            mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat));
+            patchEdgeMats.push(edgeMat);
+
+            group.add(mesh);
+            patches.push(mesh);
+        }
     }
-    const signals = buildPoints(signalPos, 0.9, 1.2, 1.0);
-    signals.geometry.getAttribute('position').setUsage(THREE.DynamicDrawUsage);
-    group.add(signals);
 
-    /* --- ambient dust --- */
+    /* Swap in the real profile photo as the ViT input once it loads; the
+       procedural image above remains as a fallback if the fetch/decode fails. */
+    new THREE.TextureLoader().load('img/profile_mobile.webp', (photo) => {
+        photo.minFilter = THREE.LinearFilter;
+        patches.forEach((p) => { p.material.map = photo; p.material.needsUpdate = true; });
+    }, undefined, () => { /* keep the procedural fallback */ });
+
+    /* ---------- token sequence: [CLS] + one token per patch ---------- */
+    const TOK = NPATCH + 1;
+    const tokenPos = [];
+    const tokenMix = [];
+    const colTop = ((TOK - 1) / 2) * TOKEN_GAP;
+    for (let i = 0; i < TOK; i++) {
+        tokenPos.push(new THREE.Vector3(SEQ_X, colTop - i * TOKEN_GAP, 0));
+        tokenMix.push(i / (TOK - 1));
+    }
+    const patchTokPos = [];
+    tokenPos.forEach((v) => patchTokPos.push(v.x, v.y, v.z));
+    const tokens = buildPoints(patchTokPos, 1.9, 2.4, 0.95, tokenMix);
+    group.add(tokens);
+
+    // distinct, brighter [CLS] token sitting at the head of the sequence
+    const clsPoint = buildPoints([tokenPos[0].x, tokenPos[0].y, tokenPos[0].z], 3.4, 3.4, 1.0);
+    group.add(clsPoint);
+
+    /* ---------- stacked encoder blocks behind the sequence (×N depth) ---------- */
+    const panels = [];
+    const panelW = small ? 3.4 : 4.2;
+    const panelH = colTop * 2 + (small ? 2 : 2.6);
+    for (let k = 0; k < 3; k++) {
+        const pm = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.06, side: THREE.DoubleSide, depthWrite: false });
+        const panel = new THREE.Mesh(new THREE.PlaneGeometry(panelW - k * 0.35, panelH - k * 0.6), pm);
+        panel.position.set(SEQ_X, 0, -1.2 - k * 1.5);
+        group.add(panel);
+        panels.push(panel);
+    }
+
+    /* ---------- self-attention: line between every token pair (i<j) ---------- */
+    const pairs = [];
+    for (let i = 0; i < TOK; i++)
+        for (let j = i + 1; j < TOK; j++) pairs.push([i, j]);
+    const attnPos = new Float32Array(pairs.length * 6);
+    const attnCol = new Float32Array(pairs.length * 6);
+    pairs.forEach(([a, b], i) => {
+        attnPos.set([tokenPos[a].x, tokenPos[a].y, tokenPos[a].z], i * 6);
+        attnPos.set([tokenPos[b].x, tokenPos[b].y, tokenPos[b].z], i * 6 + 3);
+    });
+    const attnGeo = new THREE.BufferGeometry();
+    attnGeo.setAttribute('position', new THREE.BufferAttribute(attnPos, 3));
+    attnGeo.setAttribute('color', new THREE.BufferAttribute(attnCol, 3).setUsage(THREE.DynamicDrawUsage));
+    const attnMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false });
+    const attnLines = new THREE.LineSegments(attnGeo, attnMat);
+    group.add(attnLines);
+
+    /* ---------- MLP head nodes ---------- */
+    const mlpPos = [];
+    const MLP_N = 3;
+    for (let i = 0; i < MLP_N; i++) mlpPos.push(new THREE.Vector3(MLP_X, (i - (MLP_N - 1) / 2) * 2.2, 0));
+    const mlpFlat = [];
+    mlpPos.forEach((v) => mlpFlat.push(v.x, v.y, v.z));
+    const mlpNodes = buildPoints(mlpFlat, 2.4, 2.8, 0.95);
+    group.add(mlpNodes);
+    // faint links CLS → MLP → (all outputs handled by particles)
+    const mlpLinkPos = [];
+    mlpPos.forEach((v) => { mlpLinkPos.push(tokenPos[0].x, tokenPos[0].y, tokenPos[0].z, v.x, v.y, v.z); });
+    const mlpLinkGeo = new THREE.BufferGeometry();
+    mlpLinkGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mlpLinkPos), 3));
+    const mlpLinkMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16, depthWrite: false });
+    group.add(new THREE.LineSegments(mlpLinkGeo, mlpLinkMat));
+
+    /* ---------- output: multi-label probability bars ----------
+       the ViT tags the input photo with several attributes, so more than one
+       class "fires" (the `on` flag) rather than a single arg-max winner. */
+    const CLASSES = [
+        { name: 'RESEARCHER', p: 0.98, on: true },
+        { name: 'EDUCATOR', p: 0.94, on: true },
+        { name: 'AI · IoT', p: 0.91, on: true },
+        { name: 'BIG DATA', p: 0.74, on: false },
+        { name: 'ANALYTICS', p: 0.52, on: false }
+    ];
+    const nClass = small ? 4 : CLASSES.length;
+    const BAR_GAP = small ? 1.5 : 1.7;
+    const BAR_H = small ? 0.7 : 0.85;
+    const bars = [];
+    const trackMats = [];
+    for (let i = 0; i < nClass; i++) {
+        const y = ((nClass - 1) / 2 - i) * BAR_GAP;
+        // track
+        const tGeo = new THREE.PlaneGeometry(1, BAR_H); tGeo.translate(0.5, 0, 0);
+        const tMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.1, depthWrite: false });
+        const track = new THREE.Mesh(tGeo, tMat);
+        track.position.set(OUT_X, y, -0.1); track.scale.x = MAXLEN;
+        group.add(track); trackMats.push(tMat);
+        // fill
+        const bGeo = new THREE.PlaneGeometry(1, BAR_H); bGeo.translate(0.5, 0, 0);
+        const bMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.9, depthWrite: false });
+        const bar = new THREE.Mesh(bGeo, bMat);
+        bar.position.set(OUT_X, y, 0); bar.scale.x = MAXLEN * CLASSES[i].p;
+        group.add(bar);
+        const len = MAXLEN * CLASSES[i].p;
+        bars.push({ mesh: bar, mat: bMat, y, len, on: CLASSES[i].on, tip: new THREE.Vector3(OUT_X + len, y, 0) });
+    }
+    // active labels the readout particles fly to
+    const activeBars = bars.filter((b) => b.on);
+
+    /* ---------- embedding particles: patch → token ---------- */
+    const embState = [];
+    const embPos = new Float32Array(PART_COUNT * 3);
+    for (let i = 0; i < PART_COUNT; i++) {
+        embState.push({ p: (i % NPATCH), tk: 1 + (i % (TOK - 1)), t: Math.random(), sp: 0.3 + Math.random() * 0.5 });
+    }
+    const embParticles = buildPoints(embPos, 1.0, 1.4, 1.0);
+    embParticles.geometry.getAttribute('position').setUsage(THREE.DynamicDrawUsage);
+    group.add(embParticles);
+
+    /* ---------- readout particles: [CLS] → MLP → winning class ---------- */
+    const readState = [];
+    const readPos = new Float32Array(READ_COUNT * 3);
+    for (let i = 0; i < READ_COUNT; i++) {
+        readState.push({ t: Math.random(), sp: 0.35 + Math.random() * 0.4, node: i % MLP_N, bar: activeBars[i % activeBars.length] });
+    }
+    const readParticles = buildPoints(readPos, 1.1, 1.5, 1.0);
+    readParticles.geometry.getAttribute('position').setUsage(THREE.DynamicDrawUsage);
+    group.add(readParticles);
+
+    /* ---------- ambient dust ---------- */
     const dustPos = [];
     for (let i = 0; i < DUST_COUNT; i++) {
-        dustPos.push((Math.random() - 0.5) * 64, (Math.random() - 0.5) * 34, (Math.random() - 0.5) * 24 - 4);
+        dustPos.push((Math.random() - 0.5) * 66, (Math.random() - 0.5) * 34, (Math.random() - 0.5) * 24 - 4);
     }
     const dust = buildPoints(dustPos, 0.35, 0.6, 0.25);
     scene.add(dust);
 
-    /* --- layer labels: INPUT · HIDDEN · OUTPUT --- */
-    const makeLabel = (text) => {
+    /* ---------- HUD stage captions + class tags ---------- */
+    const makeText = (text, opts) => {
         const cv = document.createElement('canvas');
-        cv.width = 512; cv.height = 96;
+        cv.width = 512; cv.height = 80;
         const ctx = cv.getContext('2d');
         const tex = new THREE.CanvasTexture(cv);
-        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-        const sprite = new THREE.Sprite(mat);
-        sprite.scale.set(small ? 5 : 8, small ? 0.95 : 1.5, 1);
-        sprite.userData.draw = (color) => {
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+        sprite.scale.set(opts.w, opts.w * (80 / 512), 1);
+        sprite.userData.draw = (color, alpha) => {
             ctx.clearRect(0, 0, cv.width, cv.height);
-            ctx.font = '700 34px system-ui, -apple-system, sans-serif';
-            ctx.textAlign = 'center';
+            ctx.font = (opts.weight || 700) + ' ' + (opts.size || 34) + 'px system-ui, -apple-system, sans-serif';
+            ctx.textAlign = opts.align || 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = color;
-            ctx.globalAlpha = 0.9;
-            // poor man's letter-spacing
-            ctx.fillText(text.split('').join(' '), cv.width / 2, cv.height / 2);
+            ctx.globalAlpha = alpha == null ? 0.9 : alpha;
+            const x = opts.align === 'left' ? 8 : cv.width / 2;
+            ctx.fillText(opts.spaced ? text.split('').join(' ') : text, x, cv.height / 2);
             tex.needsUpdate = true;
         };
         return sprite;
     };
-    // Labels live outside the rotating/scaling group, pinned near the top
-    // of the view like HUD captions; x follows each column (see resize()).
-    const LABEL_Y = 11.4;
-    const labels = [makeLabel('INPUT'), makeLabel('HIDDEN'), makeLabel('OUTPUT')];
-    labels.forEach((l) => scene.add(l));
 
-    /* --- theme-aware palette --- */
+    // four captions aligned to the four visual clusters; widths (l.w) are the
+    // base sprite size, re-scaled by the scene factor s in resize() so they
+    // shrink with the pipeline and never collide horizontally.
+    const stageLabels = [
+        { s: makeText('IMAGE → PATCHES', { w: 7.5, size: 27, spaced: true }), w: 7.5, x: () => IMG_X },
+        { s: makeText('EMBED + ATTENTION', { w: 8.5, size: 27, spaced: true }), w: 8.5, x: () => SEQ_X },
+        { s: makeText('MLP HEAD', { w: 5, size: 27, spaced: true }), w: 5, x: () => MLP_X },
+        { s: makeText('MULTI-LABEL', { w: 7, size: 27, spaced: true }), w: 7, x: () => OUT_X + MAXLEN * 0.5 }
+    ];
+    stageLabels.forEach((l) => scene.add(l.s));
+
+    const clsTag = makeText('[CLS]', { w: small ? 2.6 : 3.2, size: 30 });
+    group.add(clsTag);
+
+    const classTags = [];
+    for (let i = 0; i < nClass; i++) {
+        const t = makeText(CLASSES[i].name, { w: small ? 4.6 : 6, size: 30, align: 'left' });
+        t.position.set(OUT_X + MAXLEN + (small ? 1.5 : 3.6), bars[i].y, 0);
+        group.add(t);
+        classTags.push(t);
+    }
+
+    /* ---------- theme-aware palette ---------- */
+    const palette = { signal: new THREE.Color(), node: new THREE.Color(), hot: new THREE.Color(), line: new THREE.Color() };
     const applyTheme = () => {
         const dark = root.classList.contains('dark');
         const nodeColor = cssVarColor('--scene-node', '#0047BB');
         const lineColor = cssVarColor('--scene-line', '#3F7AD6');
         const signalColor = cssVarColor('--scene-signal', '#0090FF');
         const dustColor = cssVarColor('--scene-dust', '#9FBDEB');
-        const blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+        const hotColor = cssVarColor('--scene-hot', '#00B894');
+        palette.signal.copy(signalColor);
+        palette.node.copy(nodeColor);
+        palette.hot.copy(hotColor);
+        palette.line.copy(lineColor);
+        const glowBlend = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+        const core = new THREE.Color(dark ? '#FFFFFF' : '#002B70');
 
-        nodes.material.uniforms.uColor.value = nodeColor;
-        nodes.material.uniforms.uColorB.value = signalColor;
-        nodes.material.uniforms.uCore.value = new THREE.Color(dark ? '#FFFFFF' : '#002B70');
-        signals.material.uniforms.uColor.value = signalColor;
-        signals.material.uniforms.uCore.value = new THREE.Color(dark ? '#FFFFFF' : '#0047BB');
+        tokens.material.uniforms.uColor.value = signalColor;
+        tokens.material.uniforms.uColorB.value = nodeColor;
+        tokens.material.uniforms.uCore.value = core;
+        clsPoint.material.uniforms.uColor.value = hotColor;
+        clsPoint.material.uniforms.uColorB.value = hotColor;
+        clsPoint.material.uniforms.uCore.value = new THREE.Color('#FFFFFF');
+        mlpNodes.material.uniforms.uColor.value = nodeColor;
+        mlpNodes.material.uniforms.uColorB.value = signalColor;
+        mlpNodes.material.uniforms.uCore.value = core;
+        embParticles.material.uniforms.uColor.value = signalColor;
+        embParticles.material.uniforms.uCore.value = new THREE.Color('#FFFFFF');
+        readParticles.material.uniforms.uColor.value = hotColor;
+        readParticles.material.uniforms.uCore.value = new THREE.Color('#FFFFFF');
         dust.material.uniforms.uColor.value = dustColor;
         dust.material.uniforms.uCore.value = dustColor;
-        lineMat.color = lineColor;
-        lineMat.opacity = dark ? 0.14 : 0.18; // fully-connected = many lines, keep them faint
 
-        [nodes.material, signals.material, dust.material, lineMat].forEach((m) => {
-            m.blending = blending;
-            m.needsUpdate = true;
+        [tokens, clsPoint, mlpNodes, embParticles, readParticles, dust].forEach((o) => {
+            o.material.blending = glowBlend; o.material.needsUpdate = true;
         });
+        attnMat.blending = glowBlend;
 
-        const mutedText = getComputedStyle(root).getPropertyValue('--muted').trim() || '#64748B';
-        labels.forEach((l) => l.userData.draw(mutedText));
+        patchEdgeMats.forEach((m) => { m.color = lineColor; m.opacity = dark ? 0.5 : 0.6; });
+        panels.forEach((p) => { p.material.color = nodeColor; p.material.opacity = dark ? 0.07 : 0.05; });
+        mlpLinkMat.color = lineColor; mlpLinkMat.opacity = dark ? 0.16 : 0.2;
+
+        bars.forEach((b) => b.mat.color = b.on ? hotColor : lineColor);
+        trackMats.forEach((m) => { m.color = lineColor; m.opacity = dark ? 0.1 : 0.14; });
+
+        const muted = getComputedStyle(root).getPropertyValue('--muted').trim() || '#64748B';
+        stageLabels.forEach((l) => l.s.userData.draw(muted));
+        clsTag.userData.draw('#' + hotColor.getHexString(), 0.95);
+        classTags.forEach((t, i) => {
+            const on = bars[i] && bars[i].on;
+            t.userData.draw(on ? '#' + hotColor.getHexString() : muted, on ? 1 : 0.6);
+        });
     };
     applyTheme();
 
-    /* --- sizing --- */
+    /* ---------- sizing ---------- */
     const resize = () => {
         const w = canvas.clientWidth || canvas.parentElement.clientWidth;
         const h = canvas.clientHeight || canvas.parentElement.clientHeight;
@@ -374,24 +568,33 @@ function buildAintelScene(canvas) {
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        const s = Math.max(0.6, Math.min(1, camera.aspect / 1.5));
+        // larger now that the headline is gone, but still bounded to the lower band
+        const s = Math.max(0.5, Math.min(0.78, camera.aspect / 2.2));
         group.scale.setScalar(s);
-        labels[0].position.set(LAYER_X[0] * s, LABEL_Y, 0);
-        labels[1].position.set(0, LABEL_Y, 0);
-        labels[2].position.set(LAYER_X[LAYER_X.length - 1] * s, LABEL_Y, 0);
+        // captions sit just above the lowered pipeline (group is offset by SCENE_Y)
+        // and scale with the scene so they track their stage and don't overlap
+        const labelY = SCENE_Y + s * colTop + (small ? 0.45 : 0.4);
+        stageLabels.forEach((l) => {
+            const lw = l.w * s;
+            l.s.scale.set(lw, lw * (80 / 512), 1);
+            l.s.position.set(l.x() * s, labelY, 0);
+        });
     };
     resize();
 
-    /* --- pointer parallax --- */
+    /* ---------- pointer parallax ---------- */
     let targetRX = 0, targetRY = 0;
     window.addEventListener('pointermove', (e) => {
         const mx = e.clientX / window.innerWidth - 0.5;
         const my = e.clientY / window.innerHeight - 0.5;
-        targetRY = mx * 0.22;
-        targetRX = -my * 0.14;
+        targetRY = mx * 0.2;
+        targetRX = -my * 0.12;
     }, { passive: true });
 
-    /* --- render loop with visibility management --- */
+    /* ---------- helpers for the render loop ---------- */
+    const smooth = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+    const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
+
     const clock = new THREE.Clock();
     let rafId = 0;
     let heroVisible = true;
@@ -399,36 +602,87 @@ function buildAintelScene(canvas) {
     const renderFrame = () => {
         const t = clock.getElapsedTime();
 
-        // gentle idle drift + pointer parallax
-        const driftY = Math.sin(t * 0.09) * 0.04;
+        // intro: patches assemble → explode over the first moments
+        const ex = REDUCED_MOTION ? 1 : smooth((t - 0.4) / 1.8);
+        for (let i = 0; i < NPATCH; i++) {
+            patches[i].position.lerpVectors(patchImg[i], patchHome[i], ex);
+            // raster-scan highlight sweeping across the patch grid
+            const scan = (t * 3.0) % (NPATCH + 4);
+            const d = Math.abs(i - scan);
+            patches[i].material.color.setScalar(1 + 1.1 * Math.max(0, 1 - d / 1.3) * ex);
+        }
+
+        // living 3D sway (constant orbit) + pointer parallax, for real depth
+        const driftY = Math.sin(t * 0.13) * 0.13;
+        const driftX = Math.sin(t * 0.08) * 0.045;
         group.rotation.y += (targetRY + driftY - group.rotation.y) * 0.05;
-        group.rotation.x += (targetRX - group.rotation.x) * 0.05;
+        group.rotation.x += (targetRX + driftX - group.rotation.x) * 0.05;
         dust.rotation.y = t * 0.012;
 
-        // pulse wave sweeping input → output
-        const wave = -28 + ((t * 10) % 56);
-        nodes.material.uniforms.uTime.value = t;
-        nodes.material.uniforms.uWave.value = wave;
-        signals.material.uniforms.uTime.value = t;
+        // pipeline pulse wave sweeping input → output
+        const head = -26 + ((t * 12) % 62);
+        [tokens, clsPoint, mlpNodes, embParticles, readParticles].forEach((o) => {
+            o.material.uniforms.uTime.value = t;
+            o.material.uniforms.uWave.value = head;
+        });
         dust.material.uniforms.uTime.value = t;
 
-        // signals travelling along edges
-        const attr = signals.geometry.getAttribute('position');
-        for (let i = 0; i < SIGNAL_COUNT; i++) {
-            const s = signalState[i];
-            s.t += s.speed * 0.016;
-            if (s.t >= 1) {
-                s.edge = Math.floor(Math.random() * edges.length);
-                s.t = 0;
-                s.speed = 0.25 + Math.random() * 0.5;
-            }
-            const [a, b] = edges[s.edge];
-            const e = s.t * s.t * (3 - 2 * s.t); // smoothstep easing
-            attr.array[i * 3] = nodePos[a * 3] + (nodePos[b * 3] - nodePos[a * 3]) * e;
-            attr.array[i * 3 + 1] = nodePos[a * 3 + 1] + (nodePos[b * 3 + 1] - nodePos[a * 3 + 1]) * e;
-            attr.array[i * 3 + 2] = nodePos[a * 3 + 2] + (nodePos[b * 3 + 2] - nodePos[a * 3 + 2]) * e;
+        // encoder blocks breathe
+        panels.forEach((p, k) => { p.material.opacity = (0.05 + 0.03 * (0.5 + 0.5 * Math.sin(t * 1.2 - k))) ; });
+
+        // embedding particles: patch → token
+        const eAttr = embParticles.geometry.getAttribute('position');
+        for (let i = 0; i < PART_COUNT; i++) {
+            const st = embState[i];
+            st.t += st.sp * 0.016;
+            if (st.t >= 1) { st.t = 0; st.p = Math.floor(Math.random() * NPATCH); st.tk = 1 + Math.floor(Math.random() * (TOK - 1)); st.sp = 0.3 + Math.random() * 0.5; }
+            const e = smooth(st.t);
+            tmpA.copy(patchHome[st.p]); tmpB.copy(tokenPos[st.tk]);
+            eAttr.array[i * 3] = tmpA.x + (tmpB.x - tmpA.x) * e;
+            eAttr.array[i * 3 + 1] = tmpA.y + (tmpB.y - tmpA.y) * e;
+            eAttr.array[i * 3 + 2] = tmpA.z + (tmpB.z - tmpA.z) * e + Math.sin(Math.PI * st.t) * 2.4;
         }
-        attr.needsUpdate = true;
+        eAttr.needsUpdate = true;
+
+        // self-attention: a query token sweeps the sequence, lighting its
+        // connections to every key; links into [CLS] stay warm (readout).
+        const q = (t * 1.6) % TOK;
+        for (let i = 0; i < pairs.length; i++) {
+            const [a, b] = pairs[i];
+            const near = Math.max(1 - Math.abs(a - q), 1 - Math.abs(b - q));
+            const toCls = (a === 0 || b === 0) ? 0.5 : 0;
+            const inten = Math.max(0.08, Math.max(near, toCls));
+            const c = (a === 0 || b === 0) ? palette.hot : palette.signal;
+            const o = i * 6;
+            attnCol[o] = c.r * inten; attnCol[o + 1] = c.g * inten; attnCol[o + 2] = c.b * inten;
+            attnCol[o + 3] = attnCol[o]; attnCol[o + 4] = attnCol[o + 1]; attnCol[o + 5] = attnCol[o + 2];
+        }
+        attnGeo.getAttribute('color').needsUpdate = true;
+        attnMat.opacity = 0.35 + 0.25 * ex;
+
+        // readout particles: [CLS] → MLP node → winning class bar tip
+        const rAttr = readParticles.geometry.getAttribute('position');
+        for (let i = 0; i < READ_COUNT; i++) {
+            const st = readState[i];
+            st.t += st.sp * 0.016;
+            if (st.t >= 1) { st.t = 0; st.node = Math.floor(Math.random() * MLP_N); st.sp = 0.35 + Math.random() * 0.4; st.bar = activeBars[Math.floor(Math.random() * activeBars.length)]; }
+            if (st.t < 0.5) { tmpA.copy(tokenPos[0]); tmpB.copy(mlpPos[st.node]); var e2 = smooth(st.t / 0.5); }
+            else { tmpA.copy(mlpPos[st.node]); tmpB.copy(st.bar.tip); e2 = smooth((st.t - 0.5) / 0.5); }
+            rAttr.array[i * 3] = tmpA.x + (tmpB.x - tmpA.x) * e2;
+            rAttr.array[i * 3 + 1] = tmpA.y + (tmpB.y - tmpA.y) * e2;
+            rAttr.array[i * 3 + 2] = tmpA.z + (tmpB.z - tmpA.z) * e2 + Math.sin(Math.PI * (st.t % 0.5) * 2) * 1.2;
+        }
+        rAttr.needsUpdate = true;
+
+        // active (multi-label) bars pulse; inactive ones sit dim and jitter faintly
+        bars.forEach((b, i) => {
+            if (b.on) { b.mat.opacity = 0.85 + 0.15 * Math.sin(t * 3.2 + i * 0.6); b.mesh.scale.x = b.len * (0.985 + 0.015 * Math.sin(t * 3.2 + i)); }
+            else { b.mat.opacity = 0.6; b.mesh.scale.x = b.len * (0.9 + 0.1 * (0.5 + 0.5 * Math.sin(t * 1.7 + i))); }
+        });
+        clsPoint.material.uniforms.uColor.value.copy(palette.hot);
+
+        // keep the [CLS] tag pinned just above the CLS token
+        clsTag.position.set(tokenPos[0].x - (small ? 2.4 : 3.0), tokenPos[0].y, tokenPos[0].z);
 
         renderer.render(scene, camera);
     };
