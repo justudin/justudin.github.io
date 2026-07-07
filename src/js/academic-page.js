@@ -172,37 +172,37 @@ function buildAintelScene(canvas) {
     camera.position.set(0, 0, 30);
 
     const small = window.innerWidth < 640;
-    const LAYERS = small ? [4, 6, 6, 3] : [5, 8, 8, 4];
-    const LAYER_X = small ? [-10, -3.5, 3.5, 10] : [-16, -5.5, 5.5, 16];
-    const SPREAD = small ? 6 : 8.5;
+    // classic MLP architecture: input → hidden ×2 → output
+    const LAYERS = small ? [3, 5, 5, 2] : [4, 7, 7, 3];
+    const LAYER_X = small ? [-9, -3, 3, 9] : [-15, -5, 5, 15];
+    const SPREAD = small ? 5.5 : 8;
     const SIGNAL_COUNT = small ? 14 : 26;
-    const DUST_COUNT = small ? 70 : 150;
+    const DUST_COUNT = small ? 50 : 90;
 
-    /* --- network nodes --- */
+    /* --- nodes laid out as a readable network diagram: even vertical
+       spacing shared across layers, only a whisper of jitter --- */
+    const maxLayer = Math.max.apply(null, LAYERS);
+    const gapY = (2 * SPREAD) / (maxLayer - 1);
     const nodePos = [];
-    const layerOf = [];
+    const nodeMix = []; // 0 at input layer → 1 at output layer
     LAYERS.forEach((count, li) => {
         for (let i = 0; i < count; i++) {
-            const y = (count === 1 ? 0 : (i / (count - 1) - 0.5) * 2 * SPREAD) + (Math.random() - 0.5) * 1.6;
-            const z = (Math.random() - 0.5) * 7;
-            nodePos.push(LAYER_X[li] + (Math.random() - 0.5) * 1.2, y, z);
-            layerOf.push(li);
+            const y = (i - (count - 1) / 2) * gapY + (Math.random() - 0.5) * 0.5;
+            const z = (Math.random() - 0.5) * 2;
+            nodePos.push(LAYER_X[li] + (Math.random() - 0.5) * 0.6, y, z);
+            nodeMix.push(li / (LAYERS.length - 1));
         }
     });
-    const nodeCount = nodePos.length / 3;
 
-    /* --- edges: each node feeds 2 random nodes in the next layer --- */
+    /* --- edges: fully connected between adjacent layers --- */
     const edges = [];
     let offset = 0;
     for (let li = 0; li < LAYERS.length - 1; li++) {
         const nextOffset = offset + LAYERS[li];
         for (let i = 0; i < LAYERS[li]; i++) {
-            const picked = new Set();
-            const links = 2 + (Math.random() < 0.35 ? 1 : 0);
-            while (picked.size < Math.min(links, LAYERS[li + 1])) {
-                picked.add(nextOffset + Math.floor(Math.random() * LAYERS[li + 1]));
+            for (let j = 0; j < LAYERS[li + 1]; j++) {
+                edges.push([offset + i, nextOffset + j]);
             }
-            picked.forEach((target) => edges.push([offset + i, target]));
         }
         offset = nextOffset;
     }
@@ -217,30 +217,32 @@ function buildAintelScene(canvas) {
             uWave: { value: -999 },
             uPR: { value: renderer.getPixelRatio() },
             uColor: { value: new THREE.Color('#0047BB') },
+            uColorB: { value: new THREE.Color('#0090FF') },
             uCore: { value: new THREE.Color('#FFFFFF') },
             uOpacity: { value: opts.opacity }
         },
         vertexShader: [
             'uniform float uTime; uniform float uWave; uniform float uPR;',
-            'attribute float aSeed; attribute float aSize;',
-            'varying float vGlow;',
+            'attribute float aSeed; attribute float aSize; attribute float aMix;',
+            'varying float vGlow; varying float vMix;',
             'void main() {',
             '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
             '  float pulse = 0.85 + 0.25 * sin(uTime * 1.7 + aSeed * 6.2831);',
             '  float wave = smoothstep(4.5, 0.0, abs(position.x - uWave));',
             '  vGlow = wave;',
+            '  vMix = aMix;',
             '  gl_PointSize = aSize * uPR * pulse * (1.0 + wave * 0.9) * (140.0 / -mv.z);',
             '  gl_Position = projectionMatrix * mv;',
             '}'
         ].join('\n'),
         fragmentShader: [
-            'uniform vec3 uColor; uniform vec3 uCore; uniform float uOpacity;',
-            'varying float vGlow;',
+            'uniform vec3 uColor; uniform vec3 uColorB; uniform vec3 uCore; uniform float uOpacity;',
+            'varying float vGlow; varying float vMix;',
             'void main() {',
             '  float d = distance(gl_PointCoord, vec2(0.5));',
             '  float alpha = smoothstep(0.5, 0.12, d);',
             '  float core = smoothstep(0.22, 0.0, d);',
-            '  vec3 col = mix(uColor, uCore, core * 0.75 + vGlow * 0.2);',
+            '  vec3 col = mix(mix(uColor, uColorB, vMix), uCore, core * 0.75 + vGlow * 0.2);',
             '  gl_FragColor = vec4(col, alpha * uOpacity * (0.75 + vGlow * 0.25));',
             '  if (gl_FragColor.a < 0.01) discard;',
             '}'
@@ -265,7 +267,8 @@ function buildAintelScene(canvas) {
         return new THREE.Points(geo, mat);
     };
 
-    const nodes = buildPoints(nodePos, 1.7, 2.5, 0.95);
+    const nodes = buildPoints(nodePos, 2.0, 2.8, 0.95);
+    nodes.geometry.setAttribute('aMix', new THREE.BufferAttribute(new Float32Array(nodeMix), 1));
     group.add(nodes);
 
     /* --- connections --- */
@@ -303,8 +306,36 @@ function buildAintelScene(canvas) {
     for (let i = 0; i < DUST_COUNT; i++) {
         dustPos.push((Math.random() - 0.5) * 64, (Math.random() - 0.5) * 34, (Math.random() - 0.5) * 24 - 4);
     }
-    const dust = buildPoints(dustPos, 0.5, 0.95, 0.4);
+    const dust = buildPoints(dustPos, 0.35, 0.6, 0.25);
     scene.add(dust);
+
+    /* --- layer labels: INPUT · HIDDEN · OUTPUT --- */
+    const makeLabel = (text) => {
+        const cv = document.createElement('canvas');
+        cv.width = 512; cv.height = 96;
+        const ctx = cv.getContext('2d');
+        const tex = new THREE.CanvasTexture(cv);
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(small ? 5 : 8, small ? 0.95 : 1.5, 1);
+        sprite.userData.draw = (color) => {
+            ctx.clearRect(0, 0, cv.width, cv.height);
+            ctx.font = '700 34px system-ui, -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.9;
+            // poor man's letter-spacing
+            ctx.fillText(text.split('').join(' '), cv.width / 2, cv.height / 2);
+            tex.needsUpdate = true;
+        };
+        return sprite;
+    };
+    // Labels live outside the rotating/scaling group, pinned near the top
+    // of the view like HUD captions; x follows each column (see resize()).
+    const LABEL_Y = 11.4;
+    const labels = [makeLabel('INPUT'), makeLabel('HIDDEN'), makeLabel('OUTPUT')];
+    labels.forEach((l) => scene.add(l));
 
     /* --- theme-aware palette --- */
     const applyTheme = () => {
@@ -316,18 +347,22 @@ function buildAintelScene(canvas) {
         const blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
 
         nodes.material.uniforms.uColor.value = nodeColor;
+        nodes.material.uniforms.uColorB.value = signalColor;
         nodes.material.uniforms.uCore.value = new THREE.Color(dark ? '#FFFFFF' : '#002B70');
         signals.material.uniforms.uColor.value = signalColor;
         signals.material.uniforms.uCore.value = new THREE.Color(dark ? '#FFFFFF' : '#0047BB');
         dust.material.uniforms.uColor.value = dustColor;
         dust.material.uniforms.uCore.value = dustColor;
         lineMat.color = lineColor;
-        lineMat.opacity = dark ? 0.28 : 0.3;
+        lineMat.opacity = dark ? 0.14 : 0.18; // fully-connected = many lines, keep them faint
 
         [nodes.material, signals.material, dust.material, lineMat].forEach((m) => {
             m.blending = blending;
             m.needsUpdate = true;
         });
+
+        const mutedText = getComputedStyle(root).getPropertyValue('--muted').trim() || '#64748B';
+        labels.forEach((l) => l.userData.draw(mutedText));
     };
     applyTheme();
 
@@ -341,6 +376,9 @@ function buildAintelScene(canvas) {
         camera.updateProjectionMatrix();
         const s = Math.max(0.6, Math.min(1, camera.aspect / 1.5));
         group.scale.setScalar(s);
+        labels[0].position.set(LAYER_X[0] * s, LABEL_Y, 0);
+        labels[1].position.set(0, LABEL_Y, 0);
+        labels[2].position.set(LAYER_X[LAYER_X.length - 1] * s, LABEL_Y, 0);
     };
     resize();
 
@@ -349,8 +387,8 @@ function buildAintelScene(canvas) {
     window.addEventListener('pointermove', (e) => {
         const mx = e.clientX / window.innerWidth - 0.5;
         const my = e.clientY / window.innerHeight - 0.5;
-        targetRY = mx * 0.45;
-        targetRX = -my * 0.3;
+        targetRY = mx * 0.22;
+        targetRX = -my * 0.14;
     }, { passive: true });
 
     /* --- render loop with visibility management --- */
@@ -362,7 +400,7 @@ function buildAintelScene(canvas) {
         const t = clock.getElapsedTime();
 
         // gentle idle drift + pointer parallax
-        const driftY = Math.sin(t * 0.09) * 0.07;
+        const driftY = Math.sin(t * 0.09) * 0.04;
         group.rotation.y += (targetRY + driftY - group.rotation.y) * 0.05;
         group.rotation.x += (targetRX - group.rotation.x) * 0.05;
         dust.rotation.y = t * 0.012;

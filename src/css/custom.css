@@ -247,7 +247,7 @@ a.link:hover {
 	align-items: center;
 	gap: 0.5rem;
 	padding: 0.72rem 1.5rem;
-	border-radius: 9999px;
+	border-radius: 3px;
 	font-weight: 700;
 	font-size: 0.9rem;
 	text-decoration: none;
@@ -325,15 +325,14 @@ a.link:hover {
 	content: '';
 	width: 2.1rem;
 	height: 4px;
-	border-radius: 2px;
-	background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+	background: var(--accent);
 	flex-shrink: 0;
 }
 
 .card-glass {
 	background: var(--card-bg);
 	border: 1px solid var(--card-border);
-	border-radius: 1.25rem;
+	border-radius: 4px;
 	-webkit-backdrop-filter: blur(12px);
 	backdrop-filter: blur(12px);
 	box-shadow: var(--card-shadow);
@@ -360,7 +359,7 @@ a.link:hover {
 .focus-icon {
 	width: 2.6rem;
 	height: 2.6rem;
-	border-radius: 0.8rem;
+	border-radius: 3px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
