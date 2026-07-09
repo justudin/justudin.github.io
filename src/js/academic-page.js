@@ -180,6 +180,15 @@ const initAboutCycle = () => {
     });
 };
 
+const initBrandLogo = () => {
+    const canvas = document.getElementById('brand-canvas');
+    if (!canvas || !window.WebGLRenderingContext) return;
+    loadThree(() => {
+        try { buildBrandScene(canvas); }
+        catch (e) { console.error(e); canvas.style.display = 'none'; }
+    });
+};
+
 const cssVarColor = (name, fallback) => {
     const v = getComputedStyle(root).getPropertyValue(name).trim();
     return new THREE.Color(v || fallback);
@@ -924,8 +933,186 @@ function buildCycleScene(canvas) {
     play();
 }
 
+/* ============================================================
+   Brand emblem — an animated 3D "MS" atom that replaces the
+   nav "M·S" wordmark. The monogram is the glowing nucleus;
+   electrons orbit it on three tilted rings (the atomic-network
+   motif of the favicon), spinning up on hover. Shares
+   three.min.js via loadThree, reads the same --scene-* / --accent
+   theme vars, pauses off-screen / on tab-hide, honours
+   prefers-reduced-motion, and falls back to the plain "M·S"
+   text if WebGL is unavailable.
+   ============================================================ */
+function buildBrandScene(canvas) {
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+    camera.position.set(0, 0, 6);
+
+    const cssRaw = (name, fallback) => getComputedStyle(root).getPropertyValue(name).trim() || fallback;
+
+    /* soft radial glow used for the nucleus halo + electrons */
+    const dotTex = (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 64;
+        const x = c.getContext('2d');
+        const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, 'rgba(255,255,255,1)');
+        g.addColorStop(0.35, 'rgba(255,255,255,0.6)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(c);
+    })();
+
+    /* --- nucleus: the "MS" monogram drawn to a canvas texture, so its
+       colour tracks the brand accent and re-renders on theme change --- */
+    const NUC = 256;
+    const nucCanvas = document.createElement('canvas'); nucCanvas.width = nucCanvas.height = NUC;
+    const nucCtx = nucCanvas.getContext('2d');
+    const nucTex = new THREE.CanvasTexture(nucCanvas);
+    if (renderer.capabilities.getMaxAnisotropy) nucTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const drawNucleus = (letterCol, ringCol) => {
+        const x = nucCtx, C = NUC / 2;
+        x.clearRect(0, 0, NUC, NUC);
+        x.lineWidth = NUC * 0.05;                 // circular boundary (echoes the favicon)
+        x.strokeStyle = ringCol;
+        x.beginPath(); x.arc(C, C, NUC * 0.4, 0, Math.PI * 2); x.stroke();
+        x.fillStyle = letterCol;                  // bold MS monogram
+        x.font = `800 ${NUC * 0.46}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+        x.textAlign = 'center'; x.textBaseline = 'middle';
+        x.fillText('MS', C, C + NUC * 0.035);
+        nucTex.needsUpdate = true;
+    };
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, transparent: true, depthWrite: false, depthTest: false }));
+    halo.scale.set(3.2, 3.2, 1);
+    scene.add(halo);
+    const nucleus = new THREE.Sprite(new THREE.SpriteMaterial({ map: nucTex, transparent: true, depthWrite: false, depthTest: false }));
+    nucleus.scale.set(2.05, 2.05, 1);
+    scene.add(nucleus);
+
+    /* --- orbits: three flattened ellipses at 0/60/120°, each carrying one
+       electron. The whole atom spins; a small x-tilt gives real depth --- */
+    const orbit = new THREE.Group();
+    scene.add(orbit);
+
+    const R = 1.32, RY = R * 0.42, SEG = 90, NRINGS = 3;
+    const rings = [];
+    const spd = [1.15, -0.9, 1.4], phase = [0, 2.1, 4.2];
+    for (let r = 0; r < NRINGS; r++) {
+        const g = new THREE.Group();
+        g.rotation.z = r * (Math.PI / NRINGS);
+        orbit.add(g);
+
+        const arr = new Float32Array((SEG + 1) * 3);
+        for (let i = 0; i <= SEG; i++) {
+            const a = i / SEG * Math.PI * 2;
+            arr[i * 3] = Math.cos(a) * R; arr[i * 3 + 1] = Math.sin(a) * RY; arr[i * 3 + 2] = 0;
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+        const mat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
+        g.add(new THREE.Line(geo, mat));
+
+        const e = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, transparent: true, depthWrite: false, depthTest: false }));
+        e.scale.set(0.5, 0.5, 1);
+        g.add(e);
+
+        rings.push({ mat, electron: e, sp: spd[r], ph: phase[r] });
+    }
+
+    const palette = { line: new THREE.Color(), hot: new THREE.Color(), signal: new THREE.Color() };
+    const applyTheme = () => {
+        const dark = root.classList.contains('dark');
+        palette.line = cssVarColor('--scene-line', '#3F7AD6');
+        palette.hot = cssVarColor('--scene-hot', '#00B894');
+        palette.signal = cssVarColor('--scene-signal', '#0090FF');
+        drawNucleus(cssRaw('--accent', '#0047BB'), cssRaw('--scene-line', '#3F7AD6'));
+        const blend = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+        rings.forEach((r) => {
+            r.mat.color = palette.line.clone();
+            r.mat.opacity = dark ? 0.5 : 0.62;
+            r.electron.material.color = palette.hot.clone();
+            r.electron.material.blending = blend;
+        });
+        halo.material.color = palette.signal.clone();
+        halo.material.opacity = dark ? 0.22 : 0.1;
+        halo.material.blending = blend;
+    };
+    applyTheme();
+
+    const resize = () => {
+        const w = canvas.clientWidth || canvas.parentElement.clientWidth || 48;
+        const h = canvas.clientHeight || canvas.parentElement.clientHeight || 48;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+    };
+    resize();
+
+    /* hover spins the atom up and brightens it */
+    const anchor = canvas.closest('.hero-brand') || canvas.parentElement;
+    let spin = 1, spinTarget = 1;
+    if (!REDUCED_MOTION && anchor) {
+        anchor.addEventListener('pointerenter', () => { spinTarget = 2.7; });
+        anchor.addEventListener('pointerleave', () => { spinTarget = 1; });
+    }
+
+    const clock = new THREE.Clock();
+    const tmp = new THREE.Vector3();
+    let rafId = 0, visible = true;
+
+    const frame = () => {
+        const t = clock.getElapsedTime();
+        spin += (spinTarget - spin) * 0.08;
+
+        orbit.rotation.z = t * 0.22 * spin;
+        orbit.rotation.x = 0.34 + Math.sin(t * 0.6) * 0.1;
+        orbit.rotation.y = Math.sin(t * 0.42) * 0.12;
+
+        const hot = spin > 1.4;
+        rings.forEach((r) => {
+            const a = r.ph + t * r.sp * spin;
+            r.electron.position.set(Math.cos(a) * R, Math.sin(a) * RY, 0);
+            r.electron.getWorldPosition(tmp);
+            const front = tmp.z > 0;                 // dim electrons behind the nucleus
+            r.electron.material.opacity = front ? 1 : 0.35;
+            const s = front ? 0.58 : 0.42;
+            r.electron.scale.set(s, s, 1);
+            r.mat.opacity = (root.classList.contains('dark') ? 0.5 : 0.62) * (hot ? 1.35 : 1);
+        });
+
+        const pulse = 1 + 0.03 * Math.sin(t * 2.4);
+        nucleus.scale.set(2.05 * pulse, 2.05 * pulse, 1);
+        halo.material.opacity = (root.classList.contains('dark') ? 0.22 : 0.1) * (0.75 + 0.4 * Math.sin(t * 2.4)) * (hot ? 1.6 : 1);
+
+        renderer.render(scene, camera);
+    };
+
+    const loop = () => { frame(); rafId = requestAnimationFrame(loop); };
+    const play = () => {
+        cancelAnimationFrame(rafId);
+        if (REDUCED_MOTION) { frame(); return; }
+        if (visible && !document.hidden) rafId = requestAnimationFrame(loop);
+    };
+
+    if ('IntersectionObserver' in window) {
+        new IntersectionObserver((e) => { visible = e[0].isIntersecting; play(); }, { threshold: 0.05 }).observe(canvas);
+    }
+    document.addEventListener('visibilitychange', play);
+    window.addEventListener('resize', () => { resize(); if (REDUCED_MOTION) frame(); });
+    document.addEventListener('aint:theme', () => { applyTheme(); if (REDUCED_MOTION) frame(); });
+
+    // WebGL is live — drop the static "M·S" fallback
+    const fb = canvas.parentElement.querySelector('.brand-fallback');
+    if (fb) fb.style.display = 'none';
+
+    play();
+}
+
 initAppliedIntelligence();
 initAboutCycle();
+initBrandLogo();
 
 /* ============================================================
    "Wow" interactions

@@ -122,7 +122,12 @@
 		<div class="hero-veil" aria-hidden="true"></div>
 
 		<nav class="hero-nav" aria-label="Site">
-			<a class="hero-brand" href="index.html">M<span>·</span>S</a>
+			<a class="hero-brand" href="index.html" aria-label="Muhammad Syafrudin — home">
+					<span class="brand-logo">
+						<canvas id="brand-canvas" aria-hidden="true"></canvas>
+						<span class="brand-fallback" aria-hidden="true">M<span>·</span>S</span>
+					</span>
+				</a>
 			<div class="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
 				<div class="lang-switch">
 					<button type="button" class="lang-trigger js-lang-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Change language">

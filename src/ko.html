@@ -125,7 +125,12 @@
 		<div class="hero-veil" aria-hidden="true"></div>
 
 		<nav class="hero-nav" aria-label="사이트">
-			<a class="hero-brand" href="ko.html">M<span>·</span>S</a>
+			<a class="hero-brand" href="ko.html" aria-label="무하마드 샤프루딘 — 홈">
+					<span class="brand-logo">
+						<canvas id="brand-canvas" aria-hidden="true"></canvas>
+						<span class="brand-fallback" aria-hidden="true">M<span>·</span>S</span>
+					</span>
+				</a>
 			<div class="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
 				<div class="lang-switch">
 					<button type="button" class="lang-trigger js-lang-trigger" aria-haspopup="true" aria-expanded="false" aria-label="언어 변경">
