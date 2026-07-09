@@ -10,13 +10,44 @@
 			if (dark) document.documentElement.classList.add('dark');
 		})();
 	</script>
+	<script>
+		(function () {
+			var PAGES = { en: 'index.html', ko: 'ko.html', id: 'id.html' };
+			var seg = location.pathname.split('/').filter(Boolean).pop() || '';
+			var current = 'en';
+			if (seg === 'ko' || seg === 'ko.html') current = 'ko';
+			else if (seg === 'id' || seg === 'id.html') current = 'id';
+
+			function detect() {
+				var list = navigator.languages && navigator.languages.length
+					? navigator.languages
+					: [navigator.language || 'en'];
+				for (var i = 0; i < list.length; i++) {
+					var code = (list[i] || '').toLowerCase().split('-')[0];
+					if (code === 'ko') return 'ko';
+					if (code === 'id' || code === 'in') return 'id';
+				}
+				return 'en';
+			}
+
+			var lang = localStorage.getItem('language');
+			if (!lang || !PAGES[lang]) {
+				lang = detect();
+				localStorage.setItem('language', lang);
+			}
+
+			if (lang !== current) {
+				location.replace(PAGES[lang] + location.search + location.hash);
+			}
+		})();
+	</script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<meta name="theme-color" content="#0047BB">
-	<title>Dr. Muhammad Syafrudin · Applied Intelligence | AI Professor, Sejong University Seoul</title>
+	<title>Dr. Muhammad Syafrudin · Applied Intelligence | AI & Data Science Faculty, Sejong University Seoul</title>
 	<link rel="shortcut icon" type="image/webp" href="img/profile_mobile.webp" />
 	<meta name="description"
-		content="Applied Intelligence · Dr. Muhammad Syafrudin, AI & Data Science professor at Sejong University, Seoul. Industrial AI, IoT, and big data research that works in the real world. 114+ publications, 4734+ citations.">
+		content="Applied Intelligence · Dr. Muhammad Syafrudin, AI & Data Science faculty member at Sejong University, Seoul. Industrial AI, IoT, and big data research that works in the real world. 114+ publications, 4,734+ citations.">
 	<meta name="keywords"
 		content="Muhammad Syafrudin, Applied Intelligence, AI Professor, Data Science, Sejong University, Industrial Artificial Intelligence, Industrial Analytics, Industrial IoT, IIoT, Industrial Big Data, IBD, Machine Learning, Deep Learning, Seoul Korea, Indonesian Researcher, Diaspora Scientist, Academic Publications, Google Scholar, Research Collaboration, Programming Languages, Linear Algebra, Database Systems, WSFI, SCKD, Professor Seoul, AI Research, Data Analytics, Industrial Informatics, Computer Science, Engineering, Technology, Innovation, Academic, University Faculty, South Korea">
 	<meta name="author" content="Muhammad Syafrudin">
@@ -32,7 +63,7 @@
 		"@type": "Person",
 		"name": "Muhammad Syafrudin",
 		"jobTitle": "Full-time Faculty Member",
-		"description": "AI and Data Science Professor specializing in Industrial AI, IoT, and Big Data research",
+		"description": "AI and Data Science faculty member specializing in Industrial AI, IoT, and Big Data research",
 		"url": "https://muhammadsyafrudin.com",
 		"sameAs": [
 			"https://prof.sejong.ac.kr/udin",
@@ -55,9 +86,9 @@
 		},
 		"knowsAbout": [
 			"Industrial Artificial Intelligence",
+			"Data Intelligence",
 			"Industrial Analytics",
-			"Industrial IoT",
-			"Big Data",
+			"Industrial Informatics",
 			"Machine Learning",
 			"Deep Learning",
 			"Data Science"
@@ -93,19 +124,28 @@
 		<nav class="hero-nav" aria-label="Site">
 			<a class="hero-brand" href="index.html">M<span>·</span>S</a>
 			<div class="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
-				<a href="ko.html" class="link" data-tippy-content="한국어로 읽기">한국어</a>
-				<span>·</span>
-				<a href="id.html" class="link" data-tippy-content="Baca dalam Bahasa Indonesia">Bahasa Indonesia</a>
+				<div class="lang-switch">
+					<button type="button" class="lang-trigger js-lang-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Change language">
+						<svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>
+						<span class="lang-current">English</span>
+						<svg class="lang-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+					</button>
+					<ul class="lang-menu" id="lang-menu" role="menu">
+						<li role="none"><a role="menuitem" href="index.html" hreflang="en" class="lang-opt is-active"><span class="lang-flag">🇪🇳</span>English<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></a></li>
+						<li role="none"><a role="menuitem" href="ko.html" hreflang="ko" class="lang-opt"><span class="lang-flag">🇰🇷</span>한국어</a></li>
+						<li role="none"><a role="menuitem" href="id.html" hreflang="id" class="lang-opt"><span class="lang-flag">🇮🇩</span>Bahasa Indonesia</a></li>
+					</ul>
+				</div>
 				<button class="js-change-theme rounded w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
 					aria-label="Toggle dark mode">🌛</button>
 			</div>
 		</nav>
 
 		<div class="hero-inner">
-			<p class="hero-eyebrow">Muhammad Syafrudin · Seoul</p>
+			<p class="hero-eyebrow">Muhammad Syafrudin</p>
 			<h1 class="sr-only">Muhammad Syafrudin · Applied Intelligence</h1>
 			<p class="hero-tagline">
-				AI, IoT, and big data, built to hold up in the messy real world.
+				Artificial intelligence (AI), data science, and big data, built to hold up in the messy real world.
 				Research, teaching, and collaboration from Seoul.
 			</p>
 
@@ -115,11 +155,11 @@
 					<span class="stat-label">Years</span>
 				</div>
 				<div class="stat">
-					<span class="stat-num"><span id="workCountText">60+</span><sup>*</sup></span>
+					<span class="stat-num"><span id="workCountText">114+</span><sup>*</sup></span>
 					<span class="stat-label">Publications</span>
 				</div>
 				<div class="stat">
-					<span class="stat-num"><span id="citedCount">1770+</span><sup>*</sup></span>
+					<span class="stat-num"><span id="citedCount">4,734+</span><sup>*</sup></span>
 					<span class="stat-label">Citations</span>
 				</div>
 				<div class="stat">
@@ -170,7 +210,7 @@
 						<p>
 							My research is in
 							<a href="https://muhammadsyafrudin.com/research" class="link" target="_blank"
-								data-tippy-content="Visit research page">industrial AI, IoT, and big data</a>. I like
+								data-tippy-content="Visit research page">industrial AI, data science, and big data</a>. I like
 							building systems that hold up on messy, real-world data. I also teach
 							<a href="https://muhammadsyafrudin.com/courses" class="link" target="_blank"
 								data-tippy-content="Visit courses page">programming, machine learning, and database
@@ -179,6 +219,10 @@
 							<a href="https://muhammadsyafrudin.com/contact" class="link" target="_blank"
 								data-tippy-content="Visit contact page">reach out</a>.
 						</p>
+					</div>
+					<div class="about-cycle" aria-hidden="true">
+						<canvas id="about-canvas"></canvas>
+						<p class="about-cycle-fallback">Teach · Learn · Research · Collaborate</p>
 					</div>
 				</div>
 			</div>
@@ -201,7 +245,7 @@
 						</svg>
 					</div>
 					<span class="research-index">R / 01</span>
-					<h3 class="research-name">Industrial Artificial Intelligence</h3>
+					<h3 class="research-name">Industrial AI</h3>
 					<p class="research-desc">ML engineered for real-world industries (manufacturing, environment,
 						food, health, and more) for prediction, monitoring, and decision support on operational
 						data.</p>
@@ -244,7 +288,7 @@
 					</div>
 					<span class="research-index">R / 04</span>
 					<h3 class="research-name">Industrial Informatics</h3>
-					<p class="research-desc">The systems layer of smart, connected industries: IIoT, digital twins,
+					<p class="research-desc">The systems layer of smart, connected industries: IoT (Internet of Things), digital twins,
 						and edge-cloud pipelines linking sensors to intelligence.</p>
 				</article>
 			</div>
@@ -289,7 +333,7 @@
 					</div>
 					<div class="tl-item">
 						<span class="tl-year">2026</span>
-						Something great is coming soon..
+						Something exciting is on the way.
 					</div>
 				</div>
 			</div>
@@ -348,8 +392,8 @@
 			</a>
 		</div>
 		© 2019–<span id="yearbuild"></span>
-		<a class="link" href="https://research.muhammadsyafrudin.com/contact">Muhammad Syafrudin</a>. Built with
-		<a class="link" href="https://github.com/justudin/academic-page" target="_blank">Academic Page</a>.
+		<a class="link" href="https://research.muhammadsyafrudin.com/contact" target="_blank" data-tippy-content="Visit contact page">Muhammad Syafrudin</a>. Built with
+		<a class="link" href="https://github.com/justudin/academic-page" target="_blank" data-tippy-content="Visit GitHub repository">Academic Page</a>.
 	</footer>
 
 	<!-- vendor build location - don't change -->

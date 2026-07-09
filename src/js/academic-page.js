@@ -145,19 +145,39 @@ if (!REDUCED_MOTION && 'IntersectionObserver' in window) {
    if WebGL or the script fails, the hero quietly falls back to
    the CSS gradient background.
    ============================================================ */
-const initAppliedIntelligence = () => {
-    const canvas = document.getElementById('aintel-canvas');
-    if (!canvas || !window.WebGLRenderingContext) return;
-
+/* three.min.js is loaded once and shared by every scene on the page (the hero
+   ViT and the About cycle); callbacks queue until the script is ready. */
+let _threeLoading = false;
+const _threeQueue = [];
+const loadThree = (cb) => {
+    if (window.THREE) { cb(); return; }
+    _threeQueue.push(cb);
+    if (_threeLoading) return;
+    _threeLoading = true;
     const script = document.createElement('script');
     script.src = 'js/three.min.js';
     script.async = true;
-    script.onload = () => {
+    script.onload = () => { while (_threeQueue.length) { try { _threeQueue.shift()(); } catch (e) { console.error(e); } } };
+    script.onerror = () => { _threeLoading = false; _threeQueue.length = 0; };
+    document.head.appendChild(script);
+};
+
+const initAppliedIntelligence = () => {
+    const canvas = document.getElementById('aintel-canvas');
+    if (!canvas || !window.WebGLRenderingContext) return;
+    loadThree(() => {
         try { buildAintelScene(canvas); }
         catch (e) { console.error(e); canvas.style.display = 'none'; }
-    };
-    script.onerror = () => { canvas.style.display = 'none'; };
-    document.head.appendChild(script);
+    });
+};
+
+const initAboutCycle = () => {
+    const canvas = document.getElementById('about-canvas');
+    if (!canvas || !window.WebGLRenderingContext) return;
+    loadThree(() => {
+        try { buildCycleScene(canvas); }
+        catch (e) { console.error(e); }
+    });
 };
 
 const cssVarColor = (name, fallback) => {
@@ -405,9 +425,9 @@ function buildAintelScene(canvas) {
     const CLASSES = [
         { name: 'RESEARCHER', p: 0.98, on: true },
         { name: 'EDUCATOR', p: 0.94, on: true },
-        { name: 'AI · IoT', p: 0.91, on: true },
-        { name: 'BIG DATA', p: 0.74, on: false },
-        { name: 'ANALYTICS', p: 0.52, on: false }
+        { name: 'AI · DS', p: 0.91, on: true },
+        { name: 'BIG DATA', p: 0.84, on: false },
+        { name: 'ANALYTICS', p: 0.72, on: false }
     ];
     const nClass = small ? 4 : CLASSES.length;
     const BAR_GAP = small ? 1.5 : 1.7;
@@ -711,4 +731,272 @@ function buildAintelScene(canvas) {
     updatePlayState();
 }
 
+/* ============================================================
+   About — "Teach · Learn · Research · Collaborate · Repeat"
+   A small 3D cycle that fills the free space beside the About
+   copy: five words orbit a tilted ring; the word nearest the
+   camera lights up as it comes round, so the loop reads as a
+   continuous cycle. Shares three.min.js with the hero, pauses
+   off-screen, respects reduced motion, and is theme-aware.
+   ============================================================ */
+function buildCycleScene(canvas) {
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.set(0, 0, 15);
+
+    const WORDS = ['Teach', 'Learn', 'Research', 'Collaborate'];
+    const N = WORDS.length;
+    const R = 3.5;
+    const TILT = 0.72;                       // base ring tilt (radians)
+
+    const group = new THREE.Group();
+    group.rotation.x = -TILT;               // tilt the ring for perspective
+    scene.add(group);
+
+    /* ring outline */
+    const SEG = 100, ringArr = new Float32Array((SEG + 1) * 3);
+    for (let i = 0; i <= SEG; i++) {
+        const a = i / SEG * Math.PI * 2;
+        ringArr[i * 3] = Math.cos(a) * R; ringArr[i * 3 + 1] = 0; ringArr[i * 3 + 2] = Math.sin(a) * R;
+    }
+    const ringGeo = new THREE.BufferGeometry();
+    ringGeo.setAttribute('position', new THREE.BufferAttribute(ringArr, 3));
+    const ringMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.3, depthWrite: false });
+    group.add(new THREE.Line(ringGeo, ringMat));
+
+    /* soft radial glow sprite shared by nodes + hub */
+    const dotTex = (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 64;
+        const x = c.getContext('2d');
+        const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, 'rgba(255,255,255,1)');
+        g.addColorStop(0.35, 'rgba(255,255,255,0.55)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(c);
+    })();
+
+    const makeLabel = (text) => {
+        const cv = document.createElement('canvas'); cv.width = 320; cv.height = 80;
+        const ctx = cv.getContext('2d');
+        ctx.font = '700 40px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff'; ctx.fillText(text, 160, 42);
+        const tex = new THREE.CanvasTexture(cv);
+        const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }));
+        spr.center.set(0.5, -0.1);          // sit the word just above its node
+        spr.scale.set(3.0, 0.75, 1);
+        return spr;
+    };
+
+    const nodes = [];
+    const tmp = new THREE.Vector3();
+    for (let i = 0; i < N; i++) {
+        const a = i / N * Math.PI * 2;
+        const base = new THREE.Vector3(Math.cos(a) * R, 0, Math.sin(a) * R);
+        const dot = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, transparent: true, depthWrite: false }));
+        dot.position.copy(base);
+        group.add(dot);
+        const label = makeLabel(WORDS[i]);
+        label.position.copy(base);
+        group.add(label);
+        nodes.push({ dot, label });
+    }
+
+    /* central hub */
+    const hub = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, transparent: true, depthWrite: false }));
+    hub.scale.set(1.6, 1.6, 1);
+    group.add(hub);
+
+    /* faint signal particles flowing around the ring */
+    const PCOUNT = window.innerWidth < 640 ? 9 : 16;
+    const pState = [];
+    const pPos = new Float32Array(PCOUNT * 3);
+    for (let i = 0; i < PCOUNT; i++) {
+        pState.push({ a0: Math.random() * Math.PI * 2, sp: 0.25 + Math.random() * 0.45, r: R + (Math.random() - 0.5) * 0.4 });
+    }
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3).setUsage(THREE.DynamicDrawUsage));
+    const pMat = new THREE.PointsMaterial({ map: dotTex, size: 0.5, transparent: true, opacity: 0.5, depthWrite: false, sizeAttenuation: true });
+    const particles = new THREE.Points(pGeo, pMat);
+    group.add(particles);
+
+    const palette = { node: new THREE.Color(), hot: new THREE.Color(), signal: new THREE.Color(), muted: new THREE.Color('#64748B') };
+    const applyTheme = () => {
+        const dark = root.classList.contains('dark');
+        palette.node = cssVarColor('--scene-node', '#0047BB');
+        palette.hot = cssVarColor('--scene-hot', '#00B894');
+        palette.signal = cssVarColor('--scene-signal', '#0090FF');
+        palette.muted = new THREE.Color(getComputedStyle(root).getPropertyValue('--muted').trim() || '#64748B');
+        ringMat.color = palette.signal.clone();
+        ringMat.opacity = dark ? 0.3 : 0.42;
+        hub.material.color = palette.signal.clone();
+        const blend = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+        nodes.forEach((n) => { n.dot.material.blending = blend; });
+        hub.material.blending = blend;
+        pMat.color = palette.signal.clone();
+        pMat.blending = blend;
+    };
+    applyTheme();
+
+    const resize = () => {
+        const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+        const h = canvas.clientHeight || canvas.parentElement.clientHeight;
+        if (!w || !h) return;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        // fit the ring (+ label overhang) into the container, whichever of
+        // width/height is the tighter constraint, so it fills the space
+        const halfT = Math.tan((40 * Math.PI / 180) / 2);
+        const contentW = 2 * R + 3.0;
+        const contentH = 2 * R * Math.sin(TILT) + 1.8;
+        const zW = (contentW * 0.5) / (halfT * camera.aspect);
+        const zH = (contentH * 0.5) / halfT;
+        camera.position.z = Math.max(zW, zH) * 1.04;
+    };
+    resize();
+
+    const clock = new THREE.Clock();
+    const mutedC = new THREE.Color();
+    let rafId = 0, visible = true;
+
+    const frame = () => {
+        const t = clock.getElapsedTime();
+        group.rotation.y = t * 0.32;
+        group.rotation.x = -TILT + Math.sin(t * 0.4) * 0.05;
+        hub.material.opacity = 0.22 + 0.1 * Math.sin(t * 2);
+
+        // depth of each node (camera looks down -z, so larger z = nearer)
+        let maxZ = -1e9, minZ = 1e9;
+        const zs = nodes.map((n) => { n.dot.getWorldPosition(tmp); return tmp.z; });
+        zs.forEach((z) => { if (z > maxZ) maxZ = z; if (z < minZ) minZ = z; });
+        const span = (maxZ - minZ) || 1;
+
+        nodes.forEach((n, i) => {
+            const f = (zs[i] - minZ) / span;    // 0 = back, 1 = front
+            const front = f * f * f;            // sharpen the highlight
+            n.dot.material.color.copy(palette.node).lerp(palette.hot, front);
+            n.dot.material.opacity = 0.3 + 0.7 * f;
+            const ds = 0.85 + 0.9 * front;
+            n.dot.scale.set(ds, ds, 1);
+            mutedC.copy(palette.muted).lerp(palette.hot, front);
+            n.label.material.color.copy(mutedC);
+            n.label.material.opacity = 0.4 + 0.6 * f;
+            const ls = 1 + 0.3 * front;
+            n.label.scale.set(3.0 * ls, 0.75 * ls, 1);
+        });
+
+        // faint signal particles travelling around the ring
+        for (let i = 0; i < PCOUNT; i++) {
+            const a = pState[i].a0 + t * pState[i].sp;
+            pPos[i * 3] = Math.cos(a) * pState[i].r;
+            pPos[i * 3 + 1] = 0;
+            pPos[i * 3 + 2] = Math.sin(a) * pState[i].r;
+        }
+        pGeo.getAttribute('position').needsUpdate = true;
+        pMat.opacity = 0.4 + 0.12 * Math.sin(t * 1.5);
+
+        renderer.render(scene, camera);
+    };
+
+    const loop = () => { frame(); rafId = requestAnimationFrame(loop); };
+    const play = () => {
+        cancelAnimationFrame(rafId);
+        if (REDUCED_MOTION) { frame(); return; }
+        if (visible && !document.hidden) rafId = requestAnimationFrame(loop);
+    };
+
+    if ('IntersectionObserver' in window) {
+        new IntersectionObserver((e) => { visible = e[0].isIntersecting; play(); }, { threshold: 0.05 }).observe(canvas);
+    }
+    document.addEventListener('visibilitychange', play);
+    window.addEventListener('resize', () => { resize(); if (REDUCED_MOTION) frame(); });
+    document.addEventListener('aint:theme', () => { applyTheme(); if (REDUCED_MOTION) frame(); });
+
+    // WebGL is live — drop the static fallback
+    const fb = canvas.parentElement.querySelector('.about-cycle-fallback');
+    if (fb) fb.style.display = 'none';
+
+    play();
+}
+
 initAppliedIntelligence();
+initAboutCycle();
+
+/* ============================================================
+   "Wow" interactions
+   - a scroll-progress bar pinned to the top of the viewport
+   - cursor-tracking spotlight + subtle 3D tilt on research cards
+     (fine pointer + motion-OK only; touch/reduced-motion skip it)
+   ============================================================ */
+(() => {
+    // Scroll progress
+    const bar = document.createElement('div');
+    bar.className = 'scroll-progress';
+    bar.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(bar);
+    let ticking = false;
+    const updateProgress = () => {
+        const st = window.scrollY || document.documentElement.scrollTop || 0;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(st / max, 1) : 0) + ')';
+        ticking = false;
+    };
+    window.addEventListener('scroll', () => {
+        if (!ticking) { ticking = true; requestAnimationFrame(updateProgress); }
+    }, { passive: true });
+    window.addEventListener('resize', updateProgress, { passive: true });
+    updateProgress();
+
+    // Spotlight + tilt — only where it feels good (mouse/trackpad, motion allowed)
+    const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!fine || REDUCED_MOTION) return;
+
+    document.querySelectorAll('.research-item').forEach((card) => {
+        let raf = 0, ev = null;
+        const apply = () => {
+            raf = 0;
+            const r = card.getBoundingClientRect();
+            const px = (ev.clientX - r.left) / r.width;
+            const py = (ev.clientY - r.top) / r.height;
+            card.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+            card.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+            card.style.setProperty('--ry', ((px - 0.5) * 7).toFixed(2) + 'deg');
+            card.style.setProperty('--rx', (-(py - 0.5) * 7).toFixed(2) + 'deg');
+        };
+        card.addEventListener('pointermove', (e) => {
+            ev = e;
+            if (!raf) raf = requestAnimationFrame(apply);
+        });
+        card.addEventListener('pointerleave', () => {
+            if (raf) { cancelAnimationFrame(raf); raf = 0; }
+            card.style.setProperty('--rx', '0deg');
+            card.style.setProperty('--ry', '0deg');
+        });
+    });
+})();
+
+/* ---------- Language switcher dropdown ---------- */
+(() => {
+    const trigger = document.querySelector('.js-lang-trigger');
+    const menu = document.getElementById('lang-menu');
+    if (!trigger || !menu) return;
+    const wrap = trigger.closest('.lang-switch');
+    const close = () => { menu.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); };
+    const open = () => { menu.classList.add('open'); trigger.setAttribute('aria-expanded', 'true'); };
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.contains('open') ? close() : open();
+    });
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    menu.querySelectorAll('a[hreflang]').forEach((link) => {
+        link.addEventListener('click', () => {
+            localStorage.setItem('language', link.getAttribute('hreflang'));
+        });
+    });
+})();

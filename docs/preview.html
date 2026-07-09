@@ -5,21 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="academic-page.css" />
 </head>
-<body class="myprofile font-sans antialiased leading-relaxed text-slate-800 dark:text-slate-200" style="min-height:auto;padding:2rem 0;">
-<section class="section">
-  <h2 class="section-title">About</h2>
-  <div class="card-glass p-6 md:p-9">
-    <div class="flex flex-col sm:flex-row gap-6 sm:items-start">
-      <div class="w-24 h-24 rounded" style="background:#1e3a6e;flex-shrink:0;"></div>
-      <div class="space-y-3 text-base leading-relaxed text-slate-700 dark:text-slate-300 max-w-prose">
-        <blockquote class="border-l-4 border-primary-500 dark:border-primary-300 pl-4 text-base italic text-slate-600 dark:text-slate-400">
-          Don&rsquo;t compare yourself to anyone else because we all have our own unique journey and story that we should be proud of. &mdash;
-        </blockquote>
-        <p>I'm a full-time faculty member in the <a class="link">Department of Artificial Intelligence and Data Science at Sejong University</a> in Seoul, where I've worked since 2022. Before that, I spent three years as a full-time faculty member and five years as a graduate researcher at <a class="link">Dongguk University</a>.</p>
-        <p>My research is in <a class="link">industrial AI, IoT, and big data</a> &mdash; I like building systems that hold up on messy, real-world data. I also teach <a class="link">programming, machine learning, and database courses</a>, and enjoy helping students find their own path.</p>
-      </div>
+<body class="myprofile font-sans antialiased text-slate-800 dark:text-slate-200" style="min-height:auto;padding:2.5rem;">
+<nav class="hero-nav" style="max-width:none;">
+  <a class="hero-brand" href="#">M<span>·</span>S</a>
+  <div class="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
+    <div class="lang-switch">
+      <button type="button" class="lang-trigger" aria-haspopup="true" aria-expanded="true" aria-label="Change language">
+        <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>
+        <span class="lang-current">English</span>
+        <svg class="lang-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <ul class="lang-menu open" role="menu">
+        <li role="none"><a role="menuitem" href="#" class="lang-opt is-active"><span class="lang-flag">🇬🇧</span>English<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></a></li>
+        <li role="none"><a role="menuitem" href="#" class="lang-opt"><span class="lang-flag">🇰🇷</span>한국어</a></li>
+        <li role="none"><a role="menuitem" href="#" class="lang-opt"><span class="lang-flag">🇮🇩</span>Bahasa Indonesia</a></li>
+      </ul>
     </div>
+    <button class="js-change-theme rounded w-8 h-8 flex items-center justify-center" aria-label="Toggle dark mode">🌛</button>
   </div>
-</section>
+</nav>
 </body>
 </html>

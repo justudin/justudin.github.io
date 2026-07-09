@@ -10,16 +10,47 @@
 			if (dark) document.documentElement.classList.add('dark');
 		})();
 	</script>
+	<script>
+		(function () {
+			var PAGES = { en: 'index.html', ko: 'ko.html', id: 'id.html' };
+			var seg = location.pathname.split('/').filter(Boolean).pop() || '';
+			var current = 'en';
+			if (seg === 'ko' || seg === 'ko.html') current = 'ko';
+			else if (seg === 'id' || seg === 'id.html') current = 'id';
+
+			function detect() {
+				var list = navigator.languages && navigator.languages.length
+					? navigator.languages
+					: [navigator.language || 'en'];
+				for (var i = 0; i < list.length; i++) {
+					var code = (list[i] || '').toLowerCase().split('-')[0];
+					if (code === 'ko') return 'ko';
+					if (code === 'id' || code === 'in') return 'id';
+				}
+				return 'en';
+			}
+
+			var lang = localStorage.getItem('language');
+			if (!lang || !PAGES[lang]) {
+				lang = detect();
+				localStorage.setItem('language', lang);
+			}
+
+			if (lang !== current) {
+				location.replace(PAGES[lang] + location.search + location.hash);
+			}
+		})();
+	</script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<meta name="theme-color" content="#0047BB">
-	<title>샤프루딘 교수 — Applied Intelligence | 세종대학교 인공지능데이터사이언스학과</title>
+	<title>무하마드 샤프루딘 · Applied Intelligence | 세종대학교 인공지능데이터사이언스학과 전임교원</title>
 	<link rel="shortcut icon" type="image/webp" href="img/profile_mobile.webp" />
 	<meta name="description"
-		content="Applied Intelligence — 세종대학교 인공지능데이터사이언스학과 샤프루딘 교수. 현실 세계에서 작동하는 산업 AI, IoT, 빅데이터 연구. 114편+ 논문, 4734회+ 인용.">
+		content="Applied Intelligence · 세종대학교 인공지능데이터사이언스학과 전임교원 무하마드 샤프루딘. 현실 세계에서 작동하는 산업 AI, IoT, 빅데이터 연구. 114편+ 논문, 4,734회+ 인용.">
 	<meta name="keywords"
 		content="샤프루딘 교수, Applied Intelligence, 인공지능 교수, 데이터사이언스, 세종대학교, 산업 인공지능, 산업 분석, 산업 IoT, 산업 빅데이터, 머신러닝, 딥러닝, 서울 교수, 인도네시아 연구자, 해외 교수, 학술 논문, 구글 스콜라, 연구 협력, 프로그래밍 언어, 선형대수, 데이터베이스, WSFI, SCKD, 한국 대학교, AI 연구, 데이터 분석, 산업 정보학, 컴퓨터공학, 공학, 기술, 혁신, 학술, 대학 교수진, 한국, 연구원, 과학자">
-	<meta name="author" content="샤프루딘 교수">
+	<meta name="author" content="무하마드 샤프루딘">
 
 	<link rel="alternate" hreflang="en" href="https://muhammadsyafrudin.com/">
 	<link rel="alternate" hreflang="ko" href="https://muhammadsyafrudin.com/ko.html">
@@ -33,7 +64,7 @@
 		"name": "샤프루딘",
 		"alternateName": "Muhammad Syafrudin",
 		"jobTitle": "전임교원",
-		"description": "산업 AI, IoT, 빅데이터 연구 전문 인공지능 및 데이터사이언스 교수",
+		"description": "산업 AI, IoT, 빅데이터 연구 전문 인공지능 및 데이터사이언스 전임교원",
 		"url": "https://muhammadsyafrudin.com/ko.html",
 		"sameAs": [
 			"https://prof.sejong.ac.kr/udin",
@@ -58,9 +89,9 @@
 		},
 		"knowsAbout": [
 			"산업 인공지능",
+			"데이터 인텔리전스",
 			"산업 분석",
-			"산업 IoT",
-			"빅데이터",
+			"산업 인포매틱스",
 			"머신러닝",
 			"딥러닝",
 			"데이터 사이언스"
@@ -96,19 +127,28 @@
 		<nav class="hero-nav" aria-label="사이트">
 			<a class="hero-brand" href="ko.html">M<span>·</span>S</a>
 			<div class="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
-				<a href="index.html" class="link" data-tippy-content="Read in English">English</a>
-				<span>·</span>
-				<a href="id.html" class="link" data-tippy-content="Baca dalam Bahasa Indonesia">Bahasa Indonesia</a>
+				<div class="lang-switch">
+					<button type="button" class="lang-trigger js-lang-trigger" aria-haspopup="true" aria-expanded="false" aria-label="언어 변경">
+						<svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>
+						<span class="lang-current">한국어</span>
+						<svg class="lang-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+					</button>
+					<ul class="lang-menu" id="lang-menu" role="menu">
+						<li role="none"><a role="menuitem" href="index.html" hreflang="en" class="lang-opt"><span class="lang-flag">🇪🇳</span>English</a></li>
+						<li role="none"><a role="menuitem" href="ko.html" hreflang="ko" class="lang-opt is-active"><span class="lang-flag">🇰🇷</span>한국어<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></a></li>
+						<li role="none"><a role="menuitem" href="id.html" hreflang="id" class="lang-opt"><span class="lang-flag">🇮🇩</span>Bahasa Indonesia</a></li>
+					</ul>
+				</div>
 				<button class="js-change-theme rounded w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
 					aria-label="다크 모드 전환">🌛</button>
 			</div>
 		</nav>
 
 		<div class="hero-inner">
-			<p class="hero-eyebrow">샤프루딘 · 서울</p>
-			<h1 class="sr-only">무하마드 샤프루딘 — 응용 인텔리전스</h1>
+			<p class="hero-eyebrow">샤프루딘</p>
+			<h1 class="sr-only">샤프루딘 · 응용 인텔리전스</h1>
 			<p class="hero-tagline">
-				현실 세계에서 견디는 AI — 산업 인공지능, IoT, 빅데이터.
+				복잡한 현실 세계에서도 견디는 인공지능(AI), 데이터 사이언스, 빅데이터.
 				서울에서 연구하고, 가르치고, 협력합니다.
 			</p>
 
@@ -118,11 +158,11 @@
 					<span class="stat-label">경력(년)</span>
 				</div>
 				<div class="stat">
-					<span class="stat-num"><span id="workCountText">60+</span><sup>*</sup></span>
+					<span class="stat-num"><span id="workCountText">114+</span><sup>*</sup></span>
 					<span class="stat-label">논문</span>
 				</div>
 				<div class="stat">
-					<span class="stat-num"><span id="citedCount">1770+</span><sup>*</sup></span>
+					<span class="stat-num"><span id="citedCount">4,734+</span><sup>*</sup></span>
 					<span class="stat-label">인용</span>
 				</div>
 				<div class="stat">
@@ -158,7 +198,7 @@
 					<div class="space-y-3 text-base leading-relaxed text-slate-700 dark:text-slate-300 max-w-prose">
 						<blockquote
 							class="border-l-4 border-primary-500 dark:border-primary-300 pl-4 text-base italic text-slate-600 dark:text-slate-400">
-							우리 모두는 우리가 자랑스러워해야 할 우리만의 독특한 여정과 이야기를 가지고 있기 때문에 다른 사람들과 자신을 비교하지 마세요. &mdash;
+							우리 모두는 우리가 자랑스러워해야 할 우리만의 독특한 여정과 이야기를 가지고 있기 때문에 다른 사람들과 자신을 비교하지 마세요.
 						</blockquote>
 						<p>
 							2022년부터 <a href="https://prof.sejong.ac.kr/udin" class="link" target="_blank"
@@ -169,13 +209,17 @@
 						</p>
 						<p>
 							제 연구 분야는 <a href="https://muhammadsyafrudin.com/research" class="link" target="_blank"
-								data-tippy-content="연구 페이지 방문">산업 인공지능, IoT, 빅데이터</a>입니다. 실제 현장의 복잡한 데이터를 다루는
+								data-tippy-content="연구 페이지 방문">산업 인공지능, 데이터 사이언스, 빅데이터</a>입니다. 실제 현장의 복잡한 데이터를 다루는
 							시스템을 만드는 일을 좋아합니다. <a href="https://muhammadsyafrudin.com/courses" class="link"
 								target="_blank" data-tippy-content="강의 페이지 방문">프로그래밍, 머신러닝, 데이터베이스</a> 과목도 가르치며,
 							학생들이 자신의 길을 찾도록 돕는 것을 즐깁니다. 연구나 협업에 관심 있으시면 언제든
 							<a href="https://muhammadsyafrudin.com/contact" class="link" target="_blank"
 								data-tippy-content="연락 페이지 방문">연락해</a> 주세요.
 						</p>
+					</div>
+					<div class="about-cycle" aria-hidden="true">
+						<canvas id="about-canvas"></canvas>
+						<p class="about-cycle-fallback">Teach · Learn · Research · Collaborate</p>
 					</div>
 				</div>
 			</div>
@@ -184,7 +228,7 @@
 		<!-- ================= RESEARCH ================= -->
 		<section id="research" class="section reveal">
 			<h2 class="section-title">연구 주제</h2>
-			<p class="research-lead">제조를 넘어 환경, 식품, 헬스케어 등 다양한 산업에 AI와 데이터 과학을 적용합니다 — 복잡한 실세계 데이터를 신뢰할 수 있는 의사결정으로.</p>
+			<p class="research-lead">제조를 넘어 환경, 식품, 헬스케어 등 다양한 산업에 AI와 데이터 과학을 적용합니다. 복잡한 실세계 데이터를 신뢰할 수 있는 의사결정으로 바꿉니다.</p>
 			<div class="research-grid">
 				<article class="card-glass research-item">
 					<div class="research-icon">
@@ -197,7 +241,7 @@
 					</div>
 					<span class="research-index">R / 01</span>
 					<h3 class="research-name">산업 인공지능</h3>
-					<p class="research-desc">제조를 넘어 환경·식품·헬스케어 등 실제 산업 전반을 위한 머신러닝 — 예측, 모니터링, 의사결정 지원.</p>
+					<p class="research-desc">제조를 넘어 환경·식품·헬스케어 등 실제 산업 전반을 위한 머신러닝: 예측, 모니터링, 의사결정 지원.</p>
 				</article>
 				<article class="card-glass research-item">
 					<div class="research-icon">
@@ -210,7 +254,7 @@
 					</div>
 					<span class="research-index">R / 02</span>
 					<h3 class="research-name">데이터 인텔리전스</h3>
-					<p class="research-desc">이질적이고 빠른 데이터를 신뢰할 수 있는 인사이트로 — 표현 학습과 지식 추출.</p>
+					<p class="research-desc">표현 학습과 지식 추출로 이질적이고 빠른 데이터를 신뢰할 수 있는 인사이트로 바꿉니다.</p>
 				</article>
 				<article class="card-glass research-item">
 					<div class="research-icon">
@@ -223,7 +267,7 @@
 					</div>
 					<span class="research-index">R / 03</span>
 					<h3 class="research-name">산업 분석</h3>
-					<p class="research-desc">여러 산업 분야를 아우르는 예측·처방 분석 — 예측, 이상 탐지, 그리고 실질적 가치로 이어지는 최적화.</p>
+					<p class="research-desc">여러 산업 분야를 아우르는 예측·처방 분석: 예측, 이상 탐지, 그리고 실질적 가치로 이어지는 최적화.</p>
 				</article>
 				<article class="card-glass research-item">
 					<div class="research-icon">
@@ -235,7 +279,7 @@
 					</div>
 					<span class="research-index">R / 04</span>
 					<h3 class="research-name">산업 인포매틱스</h3>
-					<p class="research-desc">스마트하게 연결된 산업의 시스템 계층 — 센서를 지능으로 잇는 IIoT, 디지털 트윈, 엣지–클라우드 파이프라인.</p>
+					<p class="research-desc">스마트하게 연결된 산업의 시스템 계층: 센서를 지능으로 잇는 IIoT, 디지털 트윈, 엣지-클라우드 파이프라인.</p>
 				</article>
 			</div>
 		</section>
@@ -247,7 +291,7 @@
 				<div class="timeline text-base text-slate-700 dark:text-slate-300">
 					<div class="tl-item">
 						<span class="tl-year">2014</span>
-						동국대학교 대학원 연구원으로 데이터 사이언스 연구를 시작했습니다 — 데이터가 현실 세계에서 무엇을 할 수 있는지에 대한 오랜 여정의 시작이었습니다.
+						동국대학교 대학원 연구원으로 데이터 사이언스 연구를 시작했습니다. 데이터가 현실 세계에서 무엇을 할 수 있는지에 대한 오랜 여정의 시작이었습니다.
 					</div>
 					<div class="tl-item">
 						<span class="tl-year">2019</span>
@@ -274,7 +318,7 @@
 					</div>
 					<div class="tl-item">
 						<span class="tl-year">2026</span>
-						곧 멋진 소식이 찾아옵니다..
+						곧 멋진 소식을 전할 예정입니다.
 					</div>
 				</div>
 			</div>
@@ -333,8 +377,8 @@
 			</a>
 		</div>
 		© 2019–<span id="yearbuild"></span>
-		<a class="link" href="https://research.muhammadsyafrudin.com/contact">샤프루딘</a>.
-		<a class="link" href="https://github.com/justudin/academic-page" target="_blank">Academic Page</a>로
+		<a class="link" href="https://research.muhammadsyafrudin.com/contact" target="_blank" data-tippy-content="Visit contact page">샤프루딘</a>.
+		<a class="link" href="https://github.com/justudin/academic-page" target="_blank" data-tippy-content="Visit GitHub repository">Academic Page</a>로
 		제작되었습니다.
 	</footer>
 
