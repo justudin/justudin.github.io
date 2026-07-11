@@ -70,7 +70,7 @@ const fetchReviews = async () => {
 
 const fetchUpdates = async () => {
     try {
-        const response = await axios.get('https://aintlab.com/updates/rss.xml');
+        const response = await axios.get('https://research.muhammadsyafrudin.com/updates/rss.xml');
         const rssdataxml = response.data;
         const updatedata = fromXML(rssdataxml);
         const recentupdates = updatedata.rss.channel.item.slice(0, 4);
@@ -79,7 +79,7 @@ const fetchUpdates = async () => {
             `<a href='${item.link}' target='_blank' class='link' data-tippy-content='View this update'>${item.title}</a>`
         ).join(', ');
 
-        updates += `, <a href='https://aintlab.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>All updates</a>`;
+        updates += `, <a href='https://research.muhammadsyafrudin.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>All updates</a>`;
         elements.recentUpdates.innerHTML = updates;
     } catch (errors) {
         console.error(errors);
