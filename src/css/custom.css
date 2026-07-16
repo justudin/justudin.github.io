@@ -129,6 +129,8 @@ a.link:not(:has(svg)):focus-visible {
 	width: 100%;
 	height: 100%;
 	display: block;
+	transform-origin: center top;
+	will-change: transform;
 }
 
 .hero-veil {
@@ -147,8 +149,22 @@ a.link:not(:has(svg)):focus-visible {
 		linear-gradient(180deg, var(--bg-2) 0%, var(--bg-2-fade) 8%);
 }
 
-/* narrow screens stack a taller text block, so the scrim covers more */
+/* Narrow screens: the hero was full 100vh tall with a 44vh top reserve for
+   the ViT band, which on a tall, narrow phone reads as a big dead gap below
+   the nav before anything appears. Shrinking the hero itself (not just the
+   text padding) pulls the canvas scene up proportionally too, since it's
+   absolutely positioned over the whole .hero — the scrim's percentages
+   below stay correct because they're relative, not fixed vh. */
 @media (max-width: 640px) {
+	.hero {
+		min-height: 82vh;
+		min-height: 82svh;
+	}
+
+	.hero-inner {
+		padding: 25vh 1.25rem clamp(2.25rem, 6vh, 4rem);
+	}
+
 	.hero-veil {
 		background:
 			linear-gradient(0deg, var(--bg-2) 0%, var(--bg-2) 42%, var(--bg-2-fade) 58%),
@@ -193,6 +209,8 @@ a.link:not(:has(svg)):focus-visible {
 	justify-content: center;
 	text-align: center;
 	padding: 44vh 1.25rem clamp(3rem, 8vh, 6rem);
+	transform-origin: center top;
+	will-change: transform, opacity;
 }
 
 .hero-eyebrow {
@@ -343,50 +361,69 @@ a.link:not(:has(svg)):focus-visible {
 	z-index: 1;
 	max-width: 64rem;
 	margin: 0 auto;
-	padding: 3.25rem 1.25rem 0;
+	padding: clamp(4rem, 9vw, 7.5rem) 1.5rem 0;
 }
 
 .section-title {
 	display: flex;
 	align-items: center;
-	gap: 0.8rem;
-	font-size: 1.45rem;
+	gap: 1rem;
+	font-size: clamp(1.7rem, 3.6vw, 2.5rem);
 	font-weight: 800;
-	letter-spacing: -0.01em;
+	letter-spacing: -0.02em;
 	color: var(--heading);
-	margin: 0 0 1.4rem;
+	margin: 0 0 2rem;
 }
 
 .section-title::before {
 	content: '';
-	width: 2.1rem;
+	width: 2.4rem;
 	height: 4px;
-	background: var(--accent);
+	border-radius: 2px;
+	background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
 	flex-shrink: 0;
 }
 
 .card-glass {
 	background: var(--card-bg);
 	border: 1px solid var(--card-border);
-	border-radius: 4px;
-	-webkit-backdrop-filter: blur(12px);
-	backdrop-filter: blur(12px);
+	border-radius: 8px;
+	-webkit-backdrop-filter: blur(16px);
+	backdrop-filter: blur(16px);
 	box-shadow: var(--card-shadow);
+}
+
+/* Premium hover lift on the plain content cards (About / Journey / Updates).
+   Research cards get their own cursor-tilt treatment below and are excluded
+   so the two hover systems don't fight over `transform`. */
+#about .card-glass,
+#journey .card-glass,
+#updates .card-glass {
+	transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.35s ease;
+}
+
+@media (hover: hover) {
+	#about .card-glass:hover,
+	#journey .card-glass:hover,
+	#updates .card-glass:hover {
+		transform: translateY(-5px);
+		box-shadow: 0 30px 64px -22px rgba(0, 47, 128, 0.24);
+	}
 }
 
 /* Research areas — four-column domain register with icons */
 .research-lead {
-	margin: -0.6rem 0 1.5rem;
+	margin: -0.8rem 0 2.25rem;
 	max-width: 46rem;
-	font-size: 1.05rem;
-	line-height: 1.65;
+	font-size: 1.1rem;
+	line-height: 1.7;
 	color: var(--muted);
 }
 
 .research-grid {
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
-	gap: 1rem;
+	gap: 1.25rem;
 }
 
 @media (max-width: 900px) {
@@ -399,7 +436,7 @@ a.link:not(:has(svg)):focus-visible {
 
 .research-item {
 	position: relative;
-	padding: 1.5rem 1.35rem 1.5rem 1.55rem;
+	padding: 1.85rem 1.6rem 1.85rem 1.8rem;
 	overflow: hidden;
 	/* rx/ry (cursor tilt), lift (hover) and mx/my (spotlight) are driven by JS */
 	transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
@@ -487,6 +524,40 @@ a.link:not(:has(svg)):focus-visible {
 	color: var(--muted);
 }
 
+/* About — larger portrait + an Apple-style oversized pull-quote mark instead
+   of the plain left rule (Tailwind's border-l-4 utility, overridden here by
+   the extra id specificity) */
+#about img {
+	width: 7.5rem;
+	height: 7.5rem;
+	border-radius: 10px;
+	transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (hover: hover) {
+	#about img:hover { transform: scale(1.04) rotate(-1deg); }
+}
+
+#about blockquote {
+	position: relative;
+	border-left: none;
+	padding-left: 2.5rem;
+	font-size: 1.15rem;
+	line-height: 1.6;
+}
+
+#about blockquote::before {
+	content: '\201C';
+	position: absolute;
+	left: 0;
+	top: -0.6rem;
+	font-size: 3.25rem;
+	font-weight: 800;
+	line-height: 1;
+	color: var(--accent);
+	opacity: 0.45;
+}
+
 /* About cycle (three.js) — fills the free space beside the About copy */
 .about-cycle {
 	position: relative;
@@ -537,16 +608,20 @@ a.link:not(:has(svg)):focus-visible {
 
 .tl-item {
 	position: relative;
-	padding-bottom: 1.7rem;
+	padding: 0.3rem 1rem 2.1rem 0;
+	border-radius: 6px;
+	transition: background-color 0.25s ease;
 }
 
-.tl-item:last-child { padding-bottom: 0.25rem; }
+.tl-item:last-child { padding-bottom: 0.3rem; }
+
+.tl-item:hover { background-color: var(--icon-bg); }
 
 .tl-item::before {
 	content: '';
 	position: absolute;
 	left: -2.45rem;
-	top: 0.28rem;
+	top: 0.55rem;
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
@@ -556,11 +631,19 @@ a.link:not(:has(svg)):focus-visible {
 
 .tl-year {
 	display: block;
-	font-size: 0.8rem;
+	font-size: 1.15rem;
 	font-weight: 800;
-	letter-spacing: 0.1em;
+	letter-spacing: 0.02em;
 	color: var(--accent);
-	margin-bottom: 0.15rem;
+	margin-bottom: 0.3rem;
+}
+
+/* Recent updates — a calmer, more readable feed line */
+#updates .card-glass { padding: 2rem 2.25rem; }
+
+#recentUpdates {
+	font-size: 1.05rem;
+	line-height: 1.85;
 }
 
 /* ---------- Scroll reveal ---------- */

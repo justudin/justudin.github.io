@@ -46,7 +46,7 @@ const fetchWorks = async () => {
         if (workItems) {
             animateCount(elements.workCountText, workItems.total_papers);
             animateCount(elements.citedCount, workItems.total_citations);
-            elements.footerInfo.innerHTML = `<p class="italic">(*) Publications and citations from <a href="${workItems.gs_id}&view_op=list_works&sortby=pubdate" target="_blank" class="link">Google Scholar</a>, (**) reviews from <a href="https://orcid.org/${YOUR_ORCID}" target="_blank" class="link">ORCID</a>. Updated ${workItems.updated}.</p>`;
+            elements.footerInfo.innerHTML = `<p class="italic">(*) Publications and citations from <a href="${workItems.gs_id}&view_op=list_works&sortby=pubdate" target="_blank" class="link">Google Scholar</a>, (**) total peer review outlets from <a href="https://orcid.org/${YOUR_ORCID}" target="_blank" class="link">ORCID</a>. Updated ${workItems.updated}.</p>`;
         }
         return workItems;
     } catch (errors) {
@@ -192,6 +192,22 @@ const initBrandLogo = () => {
 const cssVarColor = (name, fallback) => {
     const v = getComputedStyle(root).getPropertyValue(name).trim();
     return new THREE.Color(v || fallback);
+};
+
+const cssRaw = (name, fallback) => getComputedStyle(root).getPropertyValue(name).trim() || fallback;
+
+/* Shared "MS" monogram + ring, used by both the nav brand emblem and the
+   About-section cycle hub so the two read as the same identity mark. */
+const drawMSMonogram = (ctx, size, letterCol, ringCol) => {
+    const C = size / 2;
+    ctx.clearRect(0, 0, size, size);
+    ctx.lineWidth = size * 0.05;
+    ctx.strokeStyle = ringCol;
+    ctx.beginPath(); ctx.arc(C, C, size * 0.4, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = letterCol;
+    ctx.font = `800 ${size * 0.46}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('MS', C, C + size * 0.035);
 };
 
 function buildAintelScene(canvas) {
@@ -516,7 +532,10 @@ function buildAintelScene(canvas) {
     // four captions aligned to the four visual clusters; widths (l.w) are the
     // base sprite size, re-scaled by the scene factor s in resize() so they
     // shrink with the pipeline and never collide horizontally.
-    const stageLabels = [
+    // On small screens the pipeline itself shrinks to fit, leaving no room for
+    // these captions without overlapping — skip them there (empty array keeps
+    // every downstream .forEach a harmless no-op).
+    const stageLabels = small ? [] : [
         { s: makeText('IMAGE → PATCHES', { w: 7.5, size: 27, spaced: true }), w: 7.5, x: () => IMG_X },
         { s: makeText('EMBED + ATTENTION', { w: 8.5, size: 27, spaced: true }), w: 8.5, x: () => SEQ_X },
         { s: makeText('MLP HEAD', { w: 5, size: 27, spaced: true }), w: 5, x: () => MLP_X },
@@ -815,9 +834,18 @@ function buildCycleScene(canvas) {
         nodes.push({ dot, label });
     }
 
-    /* central hub */
-    const hub = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, transparent: true, depthWrite: false }));
-    hub.scale.set(1.6, 1.6, 1);
+    /* central hub — the brand "MS" monogram, so the words orbit the same
+       identity mark used in the nav rather than a plain dot */
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, transparent: true, depthWrite: false }));
+    halo.scale.set(2.0, 2.0, 1);
+    group.add(halo);
+
+    const hubCanvas = document.createElement('canvas');
+    hubCanvas.width = hubCanvas.height = 256;
+    const hubCtx = hubCanvas.getContext('2d');
+    const hubTex = new THREE.CanvasTexture(hubCanvas);
+    const hub = new THREE.Sprite(new THREE.SpriteMaterial({ map: hubTex, transparent: true, depthWrite: false }));
+    hub.scale.set(2.15, 2.15, 1);
     group.add(hub);
 
     /* faint signal particles flowing around the ring */
@@ -842,15 +870,18 @@ function buildCycleScene(canvas) {
         palette.muted = new THREE.Color(getComputedStyle(root).getPropertyValue('--muted').trim() || '#64748B');
         ringMat.color = palette.signal.clone();
         ringMat.opacity = dark ? 0.3 : 0.42;
-        hub.material.color = palette.signal.clone();
+        halo.material.color = palette.signal.clone();
+        drawMSMonogram(hubCtx, 256, cssRaw('--accent', '#0047BB'), cssRaw('--scene-line', '#3F7AD6'));
+        hubTex.needsUpdate = true;
         const blend = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
         nodes.forEach((n) => { n.dot.material.blending = blend; });
-        hub.material.blending = blend;
+        halo.material.blending = blend;
         pMat.color = palette.signal.clone();
         pMat.blending = blend;
     };
     applyTheme();
 
+    let baseZ = 0;
     const resize = () => {
         const w = canvas.clientWidth || canvas.parentElement.clientWidth;
         const h = canvas.clientHeight || canvas.parentElement.clientHeight;
@@ -865,19 +896,62 @@ function buildCycleScene(canvas) {
         const contentH = 2 * R * Math.sin(TILT) + 1.8;
         const zW = (contentW * 0.5) / (halfT * camera.aspect);
         const zH = (contentH * 0.5) / halfT;
-        camera.position.z = Math.max(zW, zH) * 1.04;
+        baseZ = Math.max(zW, zH) * 1.04;
+        camera.position.z = baseZ;
     };
     resize();
+
+    /* ---------- hover: pause the rotation and pull the camera back ---------- */
+    let hovered = false;
+    if (!REDUCED_MOTION) {
+        canvas.addEventListener('pointerenter', () => { hovered = true; });
+        canvas.addEventListener('pointerleave', () => { hovered = false; });
+    }
+
+    /* ---------- click a word to visit the page it represents ---------- */
+    const WORD_LINKS = [
+        'https://muhammadsyafrudin.com/courses',
+        'https://courses.muhammadsyafrudin.com/about',
+        'https://muhammadsyafrudin.com/research',
+        'https://muhammadsyafrudin.com/contact'
+    ];
+    const raycaster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const pickNode = (clientX, clientY) => {
+        const r = canvas.getBoundingClientRect();
+        ndc.x = ((clientX - r.left) / r.width) * 2 - 1;
+        ndc.y = -((clientY - r.top) / r.height) * 2 + 1;
+        raycaster.setFromCamera(ndc, camera);
+        const targets = nodes.flatMap((n) => [n.dot, n.label]);
+        const hit = raycaster.intersectObjects(targets, false)[0];
+        return hit ? nodes.findIndex((n) => n.dot === hit.object || n.label === hit.object) : -1;
+    };
+    canvas.addEventListener('pointermove', (e) => {
+        canvas.style.cursor = pickNode(e.clientX, e.clientY) >= 0 ? 'pointer' : 'default';
+    });
+    canvas.addEventListener('click', (e) => {
+        const idx = pickNode(e.clientX, e.clientY);
+        if (idx >= 0 && WORD_LINKS[idx]) window.open(WORD_LINKS[idx], '_blank', 'noopener');
+    });
 
     const clock = new THREE.Clock();
     const mutedC = new THREE.Color();
     let rafId = 0, visible = true;
+    let animT = 0, lastNow = 0;
 
     const frame = () => {
-        const t = clock.getElapsedTime();
+        const now = clock.getElapsedTime();
+        const dt = Math.min(Math.max(now - lastNow, 0), 0.05);
+        lastNow = now;
+        if (!hovered) animT += dt;
+        const t = animT;
+
+        // hover pulls the camera back (zoom out) while rotation stays frozen
+        camera.position.z += ((hovered ? baseZ * 1.3 : baseZ) - camera.position.z) * 0.08;
+
         group.rotation.y = t * 0.32;
         group.rotation.x = -TILT + Math.sin(t * 0.4) * 0.05;
-        hub.material.opacity = 0.22 + 0.1 * Math.sin(t * 2);
+        halo.material.opacity = 0.22 + 0.1 * Math.sin(t * 2);
 
         // depth of each node (camera looks down -z, so larger z = nearer)
         let maxZ = -1e9, minZ = 1e9;
@@ -951,8 +1025,6 @@ function buildBrandScene(canvas) {
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
     camera.position.set(0, 0, 6);
 
-    const cssRaw = (name, fallback) => getComputedStyle(root).getPropertyValue(name).trim() || fallback;
-
     /* soft radial glow used for the nucleus halo + electrons */
     const dotTex = (() => {
         const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -973,15 +1045,7 @@ function buildBrandScene(canvas) {
     const nucTex = new THREE.CanvasTexture(nucCanvas);
     if (renderer.capabilities.getMaxAnisotropy) nucTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     const drawNucleus = (letterCol, ringCol) => {
-        const x = nucCtx, C = NUC / 2;
-        x.clearRect(0, 0, NUC, NUC);
-        x.lineWidth = NUC * 0.05;                 // circular boundary (echoes the favicon)
-        x.strokeStyle = ringCol;
-        x.beginPath(); x.arc(C, C, NUC * 0.4, 0, Math.PI * 2); x.stroke();
-        x.fillStyle = letterCol;                  // bold MS monogram
-        x.font = `800 ${NUC * 0.46}px system-ui, -apple-system, "Segoe UI", sans-serif`;
-        x.textAlign = 'center'; x.textBaseline = 'middle';
-        x.fillText('MS', C, C + NUC * 0.035);
+        drawMSMonogram(nucCtx, NUC, letterCol, ringCol);
         nucTex.needsUpdate = true;
     };
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, transparent: true, depthWrite: false, depthTest: false }));
@@ -1113,6 +1177,42 @@ function buildBrandScene(canvas) {
 initAppliedIntelligence();
 initAboutCycle();
 initBrandLogo();
+
+/* ============================================================
+   Hero scroll depth (Apple-style "scroll past" effect)
+   As the hero scrolls out of view, its content sinks back and
+   fades (perspective tilt + scale + translate) while the canvas
+   scene drifts at a different rate, reading as one continuous
+   3D space rather than a flat cut to the next section.
+   ============================================================ */
+(() => {
+    const hero = document.querySelector('.hero');
+    const inner = document.querySelector('.hero-inner');
+    if (!hero || !inner || REDUCED_MOTION) return;
+    const canvas = document.getElementById('aintel-canvas');
+    const cue = document.querySelector('.scroll-cue');
+
+    const smooth = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+    let ticking = false;
+    const update = () => {
+        ticking = false;
+        const heroH = hero.offsetHeight || 1;
+        const p = smooth(-hero.getBoundingClientRect().top / heroH);
+
+        inner.style.transform =
+            `perspective(1200px) rotateX(${p * 9}deg) translateY(${p * 46}px) scale(${1 - p * 0.1})`;
+        inner.style.opacity = String(1 - p * 0.95);
+        if (canvas) canvas.style.transform = `translateY(${p * -70}px) scale(${1 + p * 0.08})`;
+        // !important: the cue's own CSS keyframe animation also drives opacity
+        // and would otherwise win over a plain inline style every frame.
+        if (cue) cue.style.setProperty('opacity', String(Math.max(0, 1 - p * 6)), 'important');
+    };
+    window.addEventListener('scroll', () => {
+        if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+})();
 
 /* ============================================================
    "Wow" interactions
