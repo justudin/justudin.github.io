@@ -1174,9 +1174,16 @@ function buildBrandScene(canvas) {
     play();
 }
 
-initAppliedIntelligence();
-initAboutCycle();
-initBrandLogo();
+/* When the <head> gate enabled the FX layer (html[data-fx="on"]), the hero
+   ViT scene, the About cycle and the nav brand atom are all owned by js/fx
+   (the hero scene + the shared scissor-test renderer). These classic-layer
+   versions run only as the fallback for non-module / reduced-motion / low-end
+   visitors. */
+if (document.documentElement.getAttribute('data-fx') !== 'on') {
+    initAppliedIntelligence();
+    initAboutCycle();
+    initBrandLogo();
+}
 
 /* ============================================================
    Hero scroll depth (Apple-style "scroll past" effect)
@@ -1189,6 +1196,9 @@ initBrandLogo();
     const hero = document.querySelector('.hero');
     const inner = document.querySelector('.hero-inner');
     if (!hero || !inner || REDUCED_MOTION) return;
+    // When the FX layer is on, its scroll module (ScrollTrigger + Lenis) pins
+    // the hero and drives the inner/canvas transforms — don't double-drive them.
+    if (document.documentElement.getAttribute('data-fx') === 'on') return;
     const canvas = document.getElementById('aintel-canvas');
     const cue = document.querySelector('.scroll-cue');
 

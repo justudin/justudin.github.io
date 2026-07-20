@@ -41,6 +41,30 @@
 			}
 		})();
 	</script>
+	<script>
+		(function () {
+			try {
+				var ok = 'noModule' in HTMLScriptElement.prototype
+					&& !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+					&& !(navigator.deviceMemory && navigator.deviceMemory <= 2)
+					&& !(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2)
+					&& !(navigator.connection && navigator.connection.saveData);
+				if (!ok) return;
+				var d = document.documentElement;
+				d.setAttribute('data-fx', 'on');
+				// Preloader injected before first paint (no content flash). The FX
+				// module removes it on load; this longstop clears it even if the
+				// module never runs, so it can never trap the page.
+				var ov = document.createElement('div');
+				ov.className = 'fx-preloader';
+				ov.setAttribute('aria-hidden', 'true');
+				ov.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:' + (d.classList.contains('dark') ? '#0B1730' : '#F7FAFF') + ';transition:opacity .6s ease,visibility .6s ease';
+				ov.innerHTML = '<div class="fx-pre-mark"><span>M</span><i>·</i><span>S</span></div>';
+				(document.body || d).appendChild(ov);
+				setTimeout(function () { ov.classList.add('fx-pre-out'); setTimeout(function () { ov.remove(); }, 700); }, 2600);
+			} catch (e) { }
+		})();
+	</script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<meta name="theme-color" content="#0047BB">
@@ -249,6 +273,7 @@
 				yang andal.</p>
 			<div class="research-grid">
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -263,6 +288,7 @@
 						kesehatan, dan lainnya) untuk prediksi, pemantauan, dan dukungan keputusan.</p>
 				</article>
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -277,6 +303,7 @@
 						melalui representation learning dan ekstraksi pengetahuan.</p>
 				</article>
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -291,6 +318,7 @@
 						anomali, dan optimasi yang menghasilkan nilai nyata.</p>
 				</article>
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -311,6 +339,7 @@
 			<h2 class="section-title">Perjalanan</h2>
 			<div class="card-glass p-6 md:p-9">
 				<div class="timeline text-base text-slate-700 dark:text-slate-300">
+						<div class="journey-viz" aria-hidden="true"></div>
 					<div class="tl-item">
 						<span class="tl-year">2014</span>
 						Memulai riset data science sebagai peneliti pascasarjana di Universitas Dongguk, awal dari
@@ -411,6 +440,8 @@
 	<script src="js/vendor.js" defer></script>
 	<!-- academic page build location - don't change -->
 	<script src="js/academic-page.min.js" defer></script>
+	<!-- FX enhancement layer (ES modules; older browsers ignore this tag) -->
+	<script type="module" src="js/fx/main.js"></script>
 </body>
 
 </html>

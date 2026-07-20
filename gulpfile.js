@@ -51,6 +51,13 @@ gulp.task('copy-three', () =>
         .pipe(gulp.dest('docs/js'))
 );
 
+// FX enhancement layer — native ES modules, copied as-is (uglify-js can't
+// parse module syntax; minification moves to Vite if/when the build migrates)
+gulp.task('copy-fx', () =>
+    gulp.src('src/js/fx/**/*.js')
+        .pipe(gulp.dest('docs/js/fx'))
+);
+
 gulp.task('build-img', () =>
     gulp.src('src/img/*.{jpg,jpeg,png}')
         .pipe(webp({quality: 80}))
@@ -95,7 +102,7 @@ gulp.task('clean', async () => {
 
 // Start session
 gulp.task("session-start", (cb) => {
-    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'copy-three', 'build-img', 'build-html','copy-redirect', 'copy-robots')(cb);
+    return gulp.series('clean', 'build-css', 'build-vendor-js', 'build-js', 'copy-three', 'copy-fx', 'build-img', 'build-html','copy-redirect', 'copy-robots')(cb);
 });
 
 gulp.task('default', gulp.series('session-start'));

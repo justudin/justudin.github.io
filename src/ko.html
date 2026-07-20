@@ -41,6 +41,30 @@
 			}
 		})();
 	</script>
+	<script>
+		(function () {
+			try {
+				var ok = 'noModule' in HTMLScriptElement.prototype
+					&& !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+					&& !(navigator.deviceMemory && navigator.deviceMemory <= 2)
+					&& !(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2)
+					&& !(navigator.connection && navigator.connection.saveData);
+				if (!ok) return;
+				var d = document.documentElement;
+				d.setAttribute('data-fx', 'on');
+				// Preloader injected before first paint (no content flash). The FX
+				// module removes it on load; this longstop clears it even if the
+				// module never runs, so it can never trap the page.
+				var ov = document.createElement('div');
+				ov.className = 'fx-preloader';
+				ov.setAttribute('aria-hidden', 'true');
+				ov.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:' + (d.classList.contains('dark') ? '#0B1730' : '#F7FAFF') + ';transition:opacity .6s ease,visibility .6s ease';
+				ov.innerHTML = '<div class="fx-pre-mark"><span>M</span><i>·</i><span>S</span></div>';
+				(document.body || d).appendChild(ov);
+				setTimeout(function () { ov.classList.add('fx-pre-out'); setTimeout(function () { ov.remove(); }, 700); }, 2600);
+			} catch (e) { }
+		})();
+	</script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<meta name="theme-color" content="#0047BB">
@@ -241,6 +265,7 @@
 			<p class="research-lead">제조를 넘어 환경, 식품, 헬스케어 등 다양한 산업에 AI와 데이터 과학을 적용합니다. 복잡한 실세계 데이터를 신뢰할 수 있는 의사결정으로 바꿉니다.</p>
 			<div class="research-grid">
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -254,6 +279,7 @@
 					<p class="research-desc">제조를 넘어 환경·식품·헬스케어 등 실제 산업 전반을 위한 머신러닝: 예측, 모니터링, 의사결정 지원.</p>
 				</article>
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -267,6 +293,7 @@
 					<p class="research-desc">표현 학습과 지식 추출로 이질적이고 빠른 데이터를 신뢰할 수 있는 인사이트로 바꿉니다.</p>
 				</article>
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -280,6 +307,7 @@
 					<p class="research-desc">여러 산업 분야를 아우르는 예측·처방 분석: 예측, 이상 탐지, 그리고 실질적 가치로 이어지는 최적화.</p>
 				</article>
 				<article class="card-glass research-item">
+					<div class="research-viz" aria-hidden="true"></div>
 					<div class="research-icon">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
 							stroke-linecap="round" stroke-linejoin="round">
@@ -299,6 +327,7 @@
 			<h2 class="section-title">여정</h2>
 			<div class="card-glass p-6 md:p-9">
 				<div class="timeline text-base text-slate-700 dark:text-slate-300">
+						<div class="journey-viz" aria-hidden="true"></div>
 					<div class="tl-item">
 						<span class="tl-year">2014</span>
 						동국대학교 대학원 연구원으로 데이터 사이언스 연구를 시작했습니다. 데이터가 현실 세계에서 무엇을 할 수 있는지에 대한 오랜 여정의 시작이었습니다.
@@ -394,6 +423,8 @@
 	<script src="js/vendor.js" defer></script>
 	<!-- academic page build location - don't change -->
 	<script src="js/academic-page.min.js" defer></script>
+	<!-- FX enhancement layer (ES modules; older browsers ignore this tag) -->
+	<script type="module" src="js/fx/main.js"></script>
 </body>
 
 </html>
