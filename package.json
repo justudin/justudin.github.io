@@ -40,6 +40,7 @@
     "gulp-uglify": "^3.0.2",
     "gulp-webp": "^4.0.1",
     "imagemin": "^8.0.1",
-    "postcss": "^8.4.14"
+    "postcss": "^8.4.14",
+    "vite": "^8.1.5"
   }
 }
