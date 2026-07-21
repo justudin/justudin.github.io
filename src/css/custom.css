@@ -1059,6 +1059,106 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-stopped { overflow: hidden; }
 .lenis.lenis-smooth iframe { pointer-events: none; }
 
+/* ---------- Algolia DocSearch Ask-AI Sidepanel ("Ask MS Bot") ----------
+   The panel + its CSS load lazily from the CDN once credentials are set in
+   academic-page.js; these overrides win via !important because the DocSearch
+   stylesheet is injected after this one. (The header title "Ask AI" → "Ask MS
+   Bot" is a live text swap done in JS, not here.) */
+
+/* Floating launcher button — smaller and fluid across screens (defaults are
+   3.25rem on phones / 4rem on desktop, with a 1.375→2rem icon). The clamp()
+   values shrink both while keeping the button ≥ 44px so it stays an easy tap
+   target; !important beats the CDN rules incl. their min-width:769px bump. */
+.DocSearch-SidepanelButton.floating {
+	width: clamp(2.75rem, 4vw, 3rem) !important;
+	height: clamp(2.75rem, 4vw, 3rem) !important;
+	padding: 0.4rem !important;
+	border-radius: 0.8rem !important;
+}
+.DocSearch-SidepanelButton.floating svg {
+	width: clamp(1.1rem, 2.6vw, 1.35rem) !important;
+	height: clamp(1.1rem, 2.6vw, 1.35rem) !important;
+}
+
+/* Content: faint "MS" monogram watermark, deliberately low-contrast, plus a
+   slightly smaller body text size. */
+.DocSearch-Sidepanel-Content {
+	background-image: url("./img/ms-favicon.png");
+	background-repeat: no-repeat;
+	background-position: center 42%;
+	background-size: 150px;
+	background-attachment: local;
+	font-size: 0.92em !important;
+}
+
+/* Footer: slim strip; Algolia logo removed and replaced with a text wordmark. */
+.DocSearch-Sidepanel-Footer {
+	padding: 0.3rem 1rem 0.5rem !important;
+	min-height: 0 !important;
+}
+/* The logo IS the powered-by element (both classes sit on the same node,
+   inside the footer), so hide its inner link + svg and render a wordmark in
+   their place via ::after on that element. */
+.DocSearch-Sidepanel--powered-by > a,
+.DocSearch-Sidepanel--powered-by a,
+.DocSearch-Sidepanel--powered-by svg,
+.DocSearch-Sidepanel--powered-by img { display: none !important; }
+.DocSearch-Sidepanel--powered-by::after {
+	content: 'Powered by Algolia';       /* ← wordmark shown in place of the logo */
+	font-size: 0.68rem;
+	letter-spacing: 0.02em;
+	color: var(--muted);
+	opacity: 0.85;
+}
+
+/* Ask-AI answers styled as a two-person chat: You (right) ⇄ MS Bot (left). */
+.DocSearch-AskAiScreen-ExchangesList { gap: 16px !important; }
+
+/* user turn ("You") — right-aligned accent bubble */
+.DocSearch-AskAiScreen-Query {
+	align-self: flex-end;
+	max-width: 85%;
+	margin-inline-start: auto !important;
+	margin-inline-end: 0 !important;
+	background: var(--accent);
+	color: #fff;
+	border-radius: 14px 14px 4px 14px;
+	padding: 0.5rem 0.8rem !important;
+	font-size: 0.9em !important;
+	font-weight: 500 !important;
+	line-height: 1.4 !important;
+}
+.DocSearch-AskAiScreen-Query::before {
+	content: 'You';
+	display: block;
+	font-size: 0.58rem;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	opacity: 0.75;
+	margin-bottom: 2px;
+}
+
+/* bot turn ("MS Bot") — left-aligned bubble */
+.DocSearch-AskAiScreen-Response {
+	align-self: flex-start;
+	max-width: 93%;
+	margin-inline-end: auto !important;
+	border-radius: 14px 14px 14px 4px !important;
+	padding: 0.65rem 0.9rem !important;
+	position: relative;
+}
+.DocSearch-AskAiScreen-Response::before {
+	content: 'MS Bot';
+	display: block;
+	font-size: 0.58rem;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--accent);
+	margin-bottom: 4px;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
 	html { scroll-behavior: auto; }

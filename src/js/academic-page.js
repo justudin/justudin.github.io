@@ -113,10 +113,16 @@ const setToggleIcon = () => {
 };
 setToggleIcon();
 
+// mirror the theme onto data-theme so Algolia DocSearch (which keys off it)
+// tracks the light/dark toggle alongside the rest of the page
+const syncDataTheme = () => root.setAttribute('data-theme', root.classList.contains('dark') ? 'dark' : 'light');
+syncDataTheme();
+
 toggle.addEventListener('click', () => {
     const isDark = root.classList.toggle('dark');
     localStorage.theme = isDark ? 'dark' : 'light';
     setToggleIcon();
+    syncDataTheme();
     document.dispatchEvent(new CustomEvent('aint:theme'));
 });
 
@@ -1296,4 +1302,78 @@ if (document.documentElement.getAttribute('data-fx') !== 'on') {
             localStorage.setItem('language', link.getAttribute('hreflang'));
         });
     });
+})();
+
+/* ============================================================
+   Algolia DocSearch — Ask-AI Sidepanel (v4, floating)
+   A self-contained floating panel, loaded lazily from the CDN
+   *after* window load and only once real credentials are set
+   below — so an un-configured site pays zero cost and throws
+   nothing. Fill these four values from your Algolia dashboard;
+   the API key is the search-only key and is safe to expose.
+   ============================================================ */
+const DOCSEARCH_APP_ID = "EL5FDZ45P0";                            // Algolia Application ID
+const DOCSEARCH_API_KEY = "aa7c0138715588bb95f31148084ec7d4";     // search-only key (public)
+const DOCSEARCH_INDEX_NAME = "AIN Website";                       // index used by the Ask-AI assistant
+const DOCSEARCH_ASSISTANT_ID = "6c1a98e4-e56c-4899-8adc-835b45ac84ff"; // Ask-AI assistant id
+const DOCSEARCH_AGENT_STUDIO = true;                             // assistant is served via Agent Studio
+
+(() => {
+    const container = document.getElementById('docsearch-sidepanel');
+    if (!container) return;
+    const cfg = [DOCSEARCH_APP_ID, DOCSEARCH_API_KEY, DOCSEARCH_INDEX_NAME, DOCSEARCH_ASSISTANT_ID];
+    if (cfg.some((v) => !v || v.indexOf('YOUR_') === 0)) return;   // not configured yet — do nothing
+
+    const start = () => {
+        const addCss = (href) => {
+            const l = document.createElement('link');
+            l.rel = 'stylesheet'; l.href = href;
+            document.head.appendChild(l);
+        };
+        addCss('https://cdn.jsdelivr.net/npm/@docsearch/css/dist/style.css');
+        addCss('https://cdn.jsdelivr.net/npm/@docsearch/css/dist/sidepanel.css');
+
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/@docsearch/sidepanel-js';
+        s.async = true;
+        s.onload = () => {
+            const init = window.sidepanel || window.docsearchSidepanel || window.DocSearchSidepanel || window.docsearch;
+            if (typeof init !== 'function') { console.error('DocSearch sidepanel global not found'); return; }
+            try {
+                init({
+                    container: '#docsearch-sidepanel',
+                    appId: DOCSEARCH_APP_ID,
+                    apiKey: DOCSEARCH_API_KEY,
+                    indexName: DOCSEARCH_INDEX_NAME,
+                    assistantId: DOCSEARCH_ASSISTANT_ID,
+                    agentStudio: DOCSEARCH_AGENT_STUDIO,
+                    variant: 'floating',
+                    side: 'right',
+                    theme: root.classList.contains('dark') ? 'dark' : 'light'
+                });
+            } catch (e) { console.error(e); }
+
+            /* The panel's header title is live text ("Ask AI"); rename it to
+               "Ask MS Bot" whenever it (re)renders. childList-only observer,
+               throttled to one pass per frame, so it stays cheap. */
+            const patchTitle = () => {
+                document.querySelectorAll('.DocSearch-Sidepanel-Title').forEach((el) => {
+                    if (el.textContent.trim() === 'Ask AI') el.textContent = 'Ask MS Bot';
+                });
+            };
+            let scheduled = false;
+            const mo = new MutationObserver(() => {
+                if (scheduled) return;
+                scheduled = true;
+                requestAnimationFrame(() => { scheduled = false; patchTitle(); });
+            });
+            mo.observe(document.body, { childList: true, subtree: true });
+            patchTitle();
+        };
+        s.onerror = () => console.error('DocSearch sidepanel failed to load');
+        document.head.appendChild(s);
+    };
+
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
 })();

@@ -24,14 +24,13 @@ export default defineConfig({
         outDir: 'docs/js/fx',
         emptyOutDir: false,          // must not wipe the gulp-copied vendor/ + sub-modules
         target: 'es2019',
-        minify: 'esbuild',
+        minify: 'oxc',        // rolldown-native (Vite 8); avoids a separate esbuild dep
+        // the FX graph has no dynamic import() (vendor libs load via runtime
+        // <script> injection), so a single entry bundles to one file with no
+        // code-splitting needed.
         rollupOptions: {
             input: 'src/js/fx/main.js',
-            output: {
-                entryFileNames: 'main.js',
-                format: 'es',
-                inlineDynamicImports: true
-            }
+            output: { entryFileNames: 'main.js', format: 'es' }
         }
     }
 });

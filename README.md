@@ -71,14 +71,16 @@ now doubles as the fallback). Everything below is additive and reversible.
 2. **Scroll morph.** GSAP ScrollTrigger pins the hero and scrubs a 3-stage
    vertex-shader morph — globe → a point-cloud portrait sampled from the photo
    → dispersed data stream — while Lenis drives smooth scrolling.
-3. **Research cards.** Four live micro-visualizations (torus-knot, curl-noise
-   stream, anomaly line-chart, node mesh) drawn by **one** shared renderer via
-   the scissor test. Hover speeds each up.
+3. **Research cards + more, one renderer.** Four live micro-visualizations
+   (torus-knot, curl-noise stream, anomaly line-chart, node mesh) drawn by
+   **one** shared renderer via the scissor test — and the About orbit-cycle and
+   the nav brand atom are folded into that *same* renderer, so the whole FX
+   page runs on just two WebGL contexts (hero + shared). Hover speeds each up.
 4. **Journey comet.** A glowing comet travels a `CatmullRomCurve3` spine through
    the timeline milestones, tracking scroll; the 2026 node shimmers.
 5. **Micro-interactions.** Magnetic buttons, a dot+ring custom cursor, an
-   "M·S" preloader (injected before first paint, always self-clears), and
-   footer icon lift-ins.
+   "M·S" preloader (injected before first paint, always self-clears), footer
+   icon lift-ins, and a faint noise "wipe" that sweeps each section in.
 
 Colours in every scene react to the existing light/dark theme toggle (they read
 the `--scene-*` CSS variables and re-skin on the `aint:theme` event). All
@@ -90,8 +92,10 @@ rendering pauses off-screen and on tab-blur.
 src/js/fx/
   main.js              entry (boots only behind the gate)
   scenes/  hero.js     data-globe + ViT pipeline + scroll morph
-           cards.js    shared scissor renderer: 4 cards + journey comet
-  shaders/ hero-particles.js   GLSL (globe morph + glow sprites)
+           cards.js    shared scissor renderer: 4 cards + journey comet + noise
+           embeds.js   About cycle + nav brand atom (folded into cards.js)
+  shaders/ hero-particles.js  GLSL (globe morph + glow sprites)
+           noise-wipe.js      GLSL (filmic grain + section wipe)
   utils/   env.js theme.js three-loader.js scroll.js reveal.js microux.js
   vendor/  gsap.min.js ScrollTrigger.min.js lenis.min.js   (lazy-loaded)
   _smoke.mjs           dev-only headless test (never shipped)

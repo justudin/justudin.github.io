@@ -66,7 +66,10 @@ can scrub the same uniform for the hero → About transition.
 No bundler by default: FX modules ship as native ES modules copied by gulp
 (`copy-fx` task) — `uglify-js` cannot parse module syntax. An opt-in Vite
 config (`vite.config.mjs`, `npm run build:prod`) bundles + minifies the whole
-FX module graph into a single in-place `main.js` when desired; see the README.
+FX module graph into a single in-place `main.js` — verified: the 13 FX modules
+collapse to **43 KB (14.7 KB gzipped)**, still an ES module at the same path so
+the HTML tag is unchanged and rollback is just re-running gulp. Uses Vite 8's
+rolldown-native `oxc` minifier (no separate esbuild dependency).
 
 ## Phase 1b — combined hero: scroll morph (globe → portrait → stream)
 
@@ -103,6 +106,24 @@ FX module graph into a single in-place `main.js` when desired; see the README.
   glowing comet + 10-point trail whose position tracks the Journey section's
   scroll offset; the 2026 node shimmers. The CSS timeline line/dots are hidden
   under the gate so the WebGL spine replaces them.
+
+## Phase 5 — embeds folded in + noise wipe
+
+- The **About cycle** and **nav brand atom** (`scenes/embeds.js`) are now drawn
+  as two more scissor views in the **same shared renderer** as the cards +
+  journey. So the whole FX page runs on **two WebGL contexts total** — the hero
+  scene and the shared overlay — down from five. academic-page.js runs its
+  standalone About/brand renderers only when the gate is *off* (fallback).
+  About-word picking is preserved: the underlying `#about-canvas` still gets
+  pointer events (the overlay is `pointer-events:none`) and the raycaster uses
+  that element's rect, identical maths to the original.
+- The shared renderer's visibility observer now also watches the hero (for the
+  brand atom), so all four embed/section owners keep their views alive.
+- **Noise wipe** (`shaders/noise-wipe.js`): one extra full-viewport quad on the
+  shared overlay draws a barely-there animated grain (theme-tinted, ~0.05
+  alpha) that unifies the page texture; when a new container scrolls into view
+  the observer sets `uWipe = 0` and a soft noisy band sweeps down it. One draw
+  call, disabled under reduced motion with the rest of the layer.
 
 ## Phase 4 — micro-interactions (`utils/microux.js`, DOM only)
 

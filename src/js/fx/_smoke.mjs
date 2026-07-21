@@ -35,7 +35,7 @@ class Geo {
     setFromPoints(pts) { this._a.position = attr(new Float32Array(pts.length * 3), 3); return this; }
     translate() { return this; }
 }
-const obj3 = () => ({ position: new V3(), rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1, set() { }, setScalar() { } }, add() { }, userData: {} });
+const obj3 = () => ({ position: new V3(), rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1, set() { }, setScalar() { } }, add() { }, userData: {}, getWorldPosition(v) { return v.copy(this.position); } });
 const withMat = (material) => Object.assign(obj3(), { material, geometry: null });
 
 const THREE = {
@@ -61,6 +61,8 @@ const THREE = {
     CanvasTexture: function () { this.minFilter = 0; this.needsUpdate = false; },
     TextureLoader: function () { this.load = () => { }; },
     CatmullRomCurve3: function (pts) { this.getPoints = (n) => Array.from({ length: n + 1 }, () => new V3()); this.getPoint = () => new V3(); },
+    Raycaster: function () { this.setFromCamera = () => { }; this.intersectObjects = () => []; },
+    Camera: function () { this.position = new V3(); },
     Clock: function () { this.getElapsedTime = () => 0.5; },
     WebGLRenderer: function () {
         this.autoClear = true;
@@ -72,7 +74,7 @@ const THREE = {
 
 // ---- DOM / env stubs ----
 const ctx2d = () => new Proxy({}, { get: (_, k) => (k === 'createLinearGradient' || k === 'createRadialGradient') ? (() => ({ addColorStop() { } })) : (() => { }) });
-const fakeCanvas = () => ({ width: 256, height: 256, clientWidth: 1440, clientHeight: 900, style: {}, className: '', setAttribute() { }, getContext: () => ctx2d(), parentElement: { clientWidth: 1440, clientHeight: 900 }, closest: () => ({ addEventListener() { } }), addEventListener() { }, getBoundingClientRect: () => ({ left: 0, top: 0, right: 1440, bottom: 900, width: 1440, height: 900 }) });
+const fakeCanvas = () => ({ width: 256, height: 256, clientWidth: 1440, clientHeight: 900, style: {}, className: '', setAttribute() { }, getContext: () => ctx2d(), parentElement: { clientWidth: 1440, clientHeight: 900, querySelector: () => null }, closest: () => ({ addEventListener() { } }), addEventListener() { }, getBoundingClientRect: () => ({ left: 0, top: 0, right: 1440, bottom: 900, width: 1440, height: 900 }) });
 const fakeViz = () => ({ closest: () => ({ addEventListener() { } }), addEventListener() { }, getBoundingClientRect: () => ({ left: 20, top: 300, right: 320, bottom: 392, width: 300, height: 92 }) });
 
 const REDUCE = process.env.FX_REDUCE === '1';

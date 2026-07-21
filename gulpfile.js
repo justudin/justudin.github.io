@@ -38,7 +38,8 @@ gulp.task('build-js', function () {
                 drop_debugger: true
             },
             mangle: {
-                reserved: ['YOUR_ORCID', 'API_BACKEND_URL', 'YOUR_GS_ID']
+                reserved: ['YOUR_ORCID', 'API_BACKEND_URL', 'YOUR_GS_ID',
+                    'DOCSEARCH_APP_ID', 'DOCSEARCH_API_KEY', 'DOCSEARCH_INDEX_NAME', 'DOCSEARCH_ASSISTANT_ID', 'DOCSEARCH_AGENT_STUDIO']
             }
         }))
         .pipe(gulp.dest('docs/js'));
