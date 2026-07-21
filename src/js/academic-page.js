@@ -1317,12 +1317,13 @@ const DOCSEARCH_API_KEY = "aa7c0138715588bb95f31148084ec7d4";     // search-only
 const DOCSEARCH_INDEX_NAME = "AIN Website";                       // index used by the Ask-AI assistant
 const DOCSEARCH_ASSISTANT_ID = "6c1a98e4-e56c-4899-8adc-835b45ac84ff"; // Ask-AI assistant id
 const DOCSEARCH_AGENT_STUDIO = true;                             // assistant is served via Agent Studio
-// Pin the sidepanel client (an unpinned CDN URL floats to `latest` and can
-// drift out of sync with the Agent Studio backend's AI-SDK request schema —
-// the "parts.*.StepStartPartV5.type should be 'step-start'" chat error). The
-// backend validates against AI SDK v5; if 4.6.x keeps erroring on the 2nd turn
-// of a *fresh* conversation, try the v5-aligned client "5.0.0-beta.0".
-const DOCSEARCH_VERSION = "4.6.3";
+// Pin the sidepanel client. The Agent Studio backend validates against an
+// AI SDK v5 request schema; the stable 4.6.x client sends v4-shaped message
+// parts, which fails as "parts.*.StepStartPartV5.type should be 'step-start'".
+// The v5-aligned client (5.0.0-beta.0) matches the backend. If a stable 5.x is
+// published later, move to it. (Changing this value also re-clears any stored
+// conversation from the previous client, below.)
+const DOCSEARCH_VERSION = "5.0.0-beta.0";
 
 (() => {
     const container = document.getElementById('docsearch-sidepanel');
