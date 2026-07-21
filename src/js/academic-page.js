@@ -1317,6 +1317,12 @@ const DOCSEARCH_API_KEY = "aa7c0138715588bb95f31148084ec7d4";     // search-only
 const DOCSEARCH_INDEX_NAME = "AIN Website";                       // index used by the Ask-AI assistant
 const DOCSEARCH_ASSISTANT_ID = "6c1a98e4-e56c-4899-8adc-835b45ac84ff"; // Ask-AI assistant id
 const DOCSEARCH_AGENT_STUDIO = true;                             // assistant is served via Agent Studio
+// Pin the sidepanel client (an unpinned CDN URL floats to `latest` and can
+// drift out of sync with the Agent Studio backend's AI-SDK request schema —
+// the "parts.*.StepStartPartV5.type should be 'step-start'" chat error). The
+// backend validates against AI SDK v5; if 4.6.x keeps erroring on the 2nd turn
+// of a *fresh* conversation, try the v5-aligned client "5.0.0-beta.0".
+const DOCSEARCH_VERSION = "4.6.3";
 
 (() => {
     const container = document.getElementById('docsearch-sidepanel');
@@ -1325,6 +1331,20 @@ const DOCSEARCH_AGENT_STUDIO = true;                             // assistant is
     if (cfg.some((v) => !v || v.indexOf('YOUR_') === 0)) return;   // not configured yet — do nothing
 
     const start = () => {
+        // When the pinned client version changes, drop DocSearch's stored
+        // conversation/search state so an old-format conversation can't be
+        // replayed into the newer backend schema (a common trigger for the
+        // step-start validation error). Runs at most once per version bump.
+        try {
+            const VK = 'ms-docsearch-client-ver';
+            if (localStorage.getItem(VK) !== DOCSEARCH_VERSION) {
+                Object.keys(localStorage).forEach((k) => {
+                    if (/docsearch|ask[-]?ai/i.test(k)) localStorage.removeItem(k);
+                });
+                localStorage.setItem(VK, DOCSEARCH_VERSION);
+            }
+        } catch (e) { }
+
         const addCss = (href) => {
             const l = document.createElement('link');
             l.rel = 'stylesheet'; l.href = href;
@@ -1334,7 +1354,7 @@ const DOCSEARCH_AGENT_STUDIO = true;                             // assistant is
         addCss('https://cdn.jsdelivr.net/npm/@docsearch/css/dist/sidepanel.css');
 
         const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/@docsearch/sidepanel-js';
+        s.src = 'https://cdn.jsdelivr.net/npm/@docsearch/sidepanel-js@' + DOCSEARCH_VERSION;
         s.async = true;
         s.onload = () => {
             const init = window.sidepanel || window.docsearchSidepanel || window.DocSearchSidepanel || window.docsearch;
@@ -1353,22 +1373,28 @@ const DOCSEARCH_AGENT_STUDIO = true;                             // assistant is
                 });
             } catch (e) { console.error(e); }
 
-            /* The panel's header title is live text ("Ask AI"); rename it to
-               "Ask MS Bot" whenever it (re)renders. childList-only observer,
-               throttled to one pass per frame, so it stays cheap. */
-            const patchTitle = () => {
+            /* The panel's header title and intro line are live text; rewrite
+               them whenever the panel (re)renders — header "Ask AI" → "Ask MS
+               Bot" and the empty-state introduction to our own prompt. Both
+               elements are plain text (no child markup), so setting textContent
+               is safe. childList observer, throttled to one pass per frame. */
+            const INTRO_TEXT = 'Ask about our research, publications, projects, courses, etc. or how to collaborate with us.';
+            const patchLabels = () => {
                 document.querySelectorAll('.DocSearch-Sidepanel-Title').forEach((el) => {
                     if (el.textContent.trim() === 'Ask AI') el.textContent = 'Ask MS Bot';
+                });
+                document.querySelectorAll('.DocSearch-Sidepanel-Screen--introduction').forEach((el) => {
+                    if (el.textContent !== INTRO_TEXT) el.textContent = INTRO_TEXT;
                 });
             };
             let scheduled = false;
             const mo = new MutationObserver(() => {
                 if (scheduled) return;
                 scheduled = true;
-                requestAnimationFrame(() => { scheduled = false; patchTitle(); });
+                requestAnimationFrame(() => { scheduled = false; patchLabels(); });
             });
             mo.observe(document.body, { childList: true, subtree: true });
-            patchTitle();
+            patchLabels();
         };
         s.onerror = () => console.error('DocSearch sidepanel failed to load');
         document.head.appendChild(s);

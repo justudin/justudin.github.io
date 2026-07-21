@@ -1080,10 +1080,11 @@ html.lenis, html.lenis body { height: auto; }
 	height: clamp(1.1rem, 2.6vw, 1.35rem) !important;
 }
 
-/* Content: faint "MS" monogram watermark, deliberately low-contrast, plus a
-   slightly smaller body text size. */
+/* Content: "MS" favicon watermark, plus a slightly smaller body text size.
+   Reference the .webp the build produces — build-img converts src PNGs to
+   WebP, so ms-favicon.png never ships; docs/img/ has ms-favicon.webp. */
 .DocSearch-Sidepanel-Content {
-	background-image: url("./img/ms-favicon.png");
+	background-image: url("./img/ms-favicon.webp");
 	background-repeat: no-repeat;
 	background-position: center 42%;
 	background-size: 150px;
