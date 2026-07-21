@@ -1395,6 +1395,41 @@ const DOCSEARCH_VERSION = "4.6.3";
             });
             mo.observe(document.body, { childList: true, subtree: true });
             patchLabels();
+
+            /* Friendly greeting bubble by the launcher: appears a beat after
+               load to invite the visitor in, opens the panel when tapped,
+               auto-hides if ignored, and (via the ×) stays dismissed. */
+            const helpGreeting = () => {
+                try { if (localStorage.getItem('ms-help-dismissed') === '1') return; } catch (e) { }
+                if (document.querySelector('.ms-help-pop')) return;
+                const pop = document.createElement('div');
+                pop.className = 'ms-help-pop';
+                pop.setAttribute('role', 'status');
+                pop.innerHTML = '<button type="button" class="ms-help-pop-msg">Hi, I’m here to help!</button>'
+                    + '<button type="button" class="ms-help-pop-x" aria-label="Dismiss">×</button>';
+                document.body.appendChild(pop);
+
+                let timer = 0;
+                const hide = (permanent) => {
+                    pop.classList.remove('is-in');
+                    clearTimeout(timer);
+                    if (permanent) { try { localStorage.setItem('ms-help-dismissed', '1'); } catch (e) { } }
+                    setTimeout(() => pop.remove(), 400);
+                };
+                pop.querySelector('.ms-help-pop-msg').addEventListener('click', () => {
+                    const b = document.querySelector('.DocSearch-SidepanelButton');
+                    if (b) b.click();
+                    hide(true);
+                });
+                pop.querySelector('.ms-help-pop-x').addEventListener('click', (e) => { e.stopPropagation(); hide(true); });
+                // if they open the panel straight from the button, retire the bubble quietly
+                document.addEventListener('click', (e) => {
+                    if (pop.isConnected && e.target.closest && e.target.closest('.DocSearch-SidepanelButton')) hide(false);
+                });
+
+                setTimeout(() => { pop.classList.add('is-in'); timer = setTimeout(() => hide(false), 9000); }, 2500);
+            };
+            helpGreeting();
         };
         s.onerror = () => console.error('DocSearch sidepanel failed to load');
         document.head.appendChild(s);
