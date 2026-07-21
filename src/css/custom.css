@@ -1176,53 +1176,105 @@ html.lenis, html.lenis body { height: auto; }
 	opacity: 0.85;
 }
 
-/* Ask-AI answers styled as a two-person chat: You (right) ⇄ MS Bot (left). */
-.DocSearch-AskAiScreen-ExchangesList { gap: 16px !important; }
+/* ===== Ask-AI response container — optimized two-person chat (You ⇄ MS Bot).
+   Panel-internal surfaces/text use DocSearch's own vars so they track the
+   panel theme; brand --accent is reserved for the user bubble + labels. ===== */
+.DocSearch-AskAiScreen-ExchangesList { gap: 14px !important; margin: 6px 0 !important; }
+.DocSearch-AskAiScreen-Response-Container { gap: 0.4rem !important; }
+.DocSearch-AskAiScreen-MessageContent { row-gap: 0.7em !important; }
 
 /* user turn ("You") — right-aligned accent bubble */
 .DocSearch-AskAiScreen-Query {
-	align-self: flex-end;
-	max-width: 85%;
+	align-self: flex-end !important;
+	max-width: 82% !important;
 	margin-inline-start: auto !important;
 	margin-inline-end: 0 !important;
 	background: var(--accent);
 	color: #fff;
-	border-radius: 14px 14px 4px 14px;
-	padding: 0.5rem 0.8rem !important;
-	font-size: 0.9em !important;
+	border-radius: 16px 16px 5px 16px;
+	padding: 0.5rem 0.85rem !important;
+	font-size: 0.9rem !important;
 	font-weight: 500 !important;
-	line-height: 1.4 !important;
+	line-height: 1.45 !important;
+	box-shadow: 0 5px 16px -8px var(--btn-glow);
 }
 .DocSearch-AskAiScreen-Query::before {
 	content: 'You';
 	display: block;
-	font-size: 0.58rem;
+	font-size: 0.56rem;
 	font-weight: 700;
-	letter-spacing: 0.07em;
+	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	opacity: 0.75;
+	opacity: 0.72;
 	margin-bottom: 2px;
 }
 
-/* bot turn ("MS Bot") — left-aligned bubble */
+/* bot turn ("MS Bot") — left-aligned bubble; the label carries a small
+   favicon avatar so it reads as a chat participant. */
 .DocSearch-AskAiScreen-Response {
-	align-self: flex-start;
-	max-width: 93%;
+	align-self: flex-start !important;
+	max-width: 94% !important;
 	margin-inline-end: auto !important;
-	border-radius: 14px 14px 14px 4px !important;
-	padding: 0.65rem 0.9rem !important;
-	position: relative;
+	margin-block-end: 0 !important;
+	background: var(--docsearch-hit-background) !important;
+	border-radius: 16px 16px 16px 5px !important;
+	padding: 0.7rem 0.9rem !important;
+	font-size: 0.9rem !important;
+	gap: 0.55em !important;
+	/* inset ring = 1px border (survives clean-css var() folding) + drop shadow */
+	box-shadow: inset 0 0 0 1px var(--docsearch-sidepanel-border, rgba(128, 128, 128, 0.18)), 0 8px 22px -14px rgba(0, 0, 0, 0.4) !important;
 }
 .DocSearch-AskAiScreen-Response::before {
 	content: 'MS Bot';
-	display: block;
-	font-size: 0.58rem;
+	display: flex;
+	align-items: center;
+	min-height: 1.1rem;
+	padding-inline-start: 1.45rem;
+	background: url("./img/ms-favicon.webp") left center / 1.1rem 1.1rem no-repeat;
+	font-size: 0.6rem;
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	text-transform: uppercase;
 	color: var(--accent);
-	margin-bottom: 4px;
+	margin-bottom: 0.1rem;
 }
+
+/* answer text — comfortable reading rhythm */
+.DocSearch-AskAiScreen-Answer {
+	color: var(--docsearch-text-color) !important;
+	line-height: 1.62 !important;
+}
+
+/* related sources — compact pill links that wrap neatly */
+.DocSearch-AskAiScreen-RelatedSources { gap: 0.3rem !important; padding-bottom: 0.6rem !important; }
+.DocSearch-AskAiScreen-RelatedSources-Title {
+	font-size: 0.62rem !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	opacity: 0.75;
+	padding: 2px 0 !important;
+}
+.DocSearch-AskAiScreen-RelatedSources-List { gap: 6px !important; }
+.DocSearch-AskAiScreen-RelatedSources-Item-Link {
+	max-width: 100% !important;
+	padding: 5px 10px !important;
+	border-radius: 999px !important;
+	background: transparent !important;
+	box-shadow: inset 0 0 0 1px var(--docsearch-sidepanel-border, rgba(128, 128, 128, 0.18)) !important;
+	font-size: 0.72em !important;
+}
+.DocSearch-AskAiScreen-RelatedSources-Item-Link:hover {
+	background: var(--docsearch-hit-highlight-color) !important;
+	box-shadow: inset 0 0 0 1px var(--accent) !important;
+}
+
+/* answer footer / actions — quiet, and reasoning/tool traces de-emphasised */
+.DocSearch-AskAiScreen-Answer-Footer { padding-top: 0.2rem; }
+.DocSearch-AskAiScreen-Actions { gap: 8px !important; }
+.DocSearch-AskAiScreen-MessageContent-Reasoning,
+.DocSearch-AskAiScreen-MessageContent-Tool { font-size: 0.78em !important; opacity: 0.85; }
+.DocSearch-AskAiScreen-Disclaimer { opacity: 0.7; padding-block: 0.75em 0.3em !important; }
 
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
