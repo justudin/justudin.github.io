@@ -1,7 +1,7 @@
 /* academic-page v2.0.0 "Applied Intelligence" | (c) 2026 by Muhammad Syafrudin */
 
 const YOUR_ORCID = "0000-0002-5640-4413"; // change this value with your actual ORCID
-const API_BACKEND_URL = "https://s.aintlab.com"; // change this with your API_BACKEND_URL
+const API_BACKEND_URL = "https://s.ain.my.id"; // change this with your API_BACKEND_URL
 const YOUR_GS_ID = "WLTzkOMAAAAJ";
 
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -70,7 +70,7 @@ const fetchReviews = async () => {
 
 const fetchUpdates = async () => {
     try {
-        const response = await axios.get('https://research.muhammadsyafrudin.com/updates/rss.xml');
+        const response = await axios.get('https://ain.my.id/rss.xml');
         const rssdataxml = response.data;
         const updatedata = fromXML(rssdataxml);
         const recentupdates = updatedata.rss.channel.item.slice(0, 4);
@@ -79,7 +79,7 @@ const fetchUpdates = async () => {
             `<a href='${item.link}' target='_blank' class='link' data-tippy-content='View this update'>${item.title}</a>`
         ).join(', ');
 
-        updates += `, <a href='https://research.muhammadsyafrudin.com/updates' class='link' data-tippy-content='View all updates' target='_blank'>All updates</a>`;
+        updates += `, <a href='https://ain.my.id' class='link' data-tippy-content='View all updates' target='_blank'>All updates</a>`;
         elements.recentUpdates.innerHTML = updates;
     } catch (errors) {
         console.error(errors);
