@@ -10,37 +10,12 @@
 			if (dark) document.documentElement.classList.add('dark');
 		})();
 	</script>
-	<script>
-		(function () {
-			var PAGES = { en: 'index.html', ko: 'ko.html', id: 'id.html' };
-			var seg = location.pathname.split('/').filter(Boolean).pop() || '';
-			var current = 'en';
-			if (seg === 'ko' || seg === 'ko.html') current = 'ko';
-			else if (seg === 'id' || seg === 'id.html') current = 'id';
-
-			function detect() {
-				var list = navigator.languages && navigator.languages.length
-					? navigator.languages
-					: [navigator.language || 'en'];
-				for (var i = 0; i < list.length; i++) {
-					var code = (list[i] || '').toLowerCase().split('-')[0];
-					if (code === 'ko') return 'ko';
-					if (code === 'id' || code === 'in') return 'id';
-				}
-				return 'en';
-			}
-
-			var lang = localStorage.getItem('language');
-			if (!lang || !PAGES[lang]) {
-				lang = detect();
-				localStorage.setItem('language', lang);
-			}
-
-			if (lang !== current) {
-				location.replace(PAGES[lang] + location.search + location.hash);
-			}
-		})();
-	</script>
+	<!-- Language is no longer auto-redirected here. Rewriting the URL on load
+	     broke every shared deep link (a ko-locale visitor opening a link to this
+	     page was silently moved to ko.html, with location.replace() removing the
+	     way back), and it duplicated the server-side geo rule in _redirects that
+	     localises `/` before the browser is involved. academic-page.js now shows
+	     a dismissible "View in …" offer instead. -->
 	<script>
 		(function () {
 			try {
@@ -53,15 +28,18 @@
 				var d = document.documentElement;
 				d.setAttribute('data-fx', 'on');
 				// Preloader injected before first paint (no content flash). The FX
-				// module removes it on load; this longstop clears it even if the
-				// module never runs, so it can never trap the page.
+				// module clears it at DOMContentLoaded; this longstop clears it
+				// even if the module never runs. Kept short (900ms, was 2600ms):
+				// nothing is actually being preloaded — the content is static
+				// HTML — so a longer hold was pure LCP cost for a flourish, and
+				// any failure of the module made every visitor wait it out.
 				var ov = document.createElement('div');
 				ov.className = 'fx-preloader';
 				ov.setAttribute('aria-hidden', 'true');
 				ov.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:' + (d.classList.contains('dark') ? '#0B1730' : '#F7FAFF') + ';transition:opacity .6s ease,visibility .6s ease';
 				ov.innerHTML = '<div class="fx-pre-mark"><span>M</span><i>·</i><span>S</span></div>';
 				(document.body || d).appendChild(ov);
-				setTimeout(function () { ov.classList.add('fx-pre-out'); setTimeout(function () { ov.remove(); }, 700); }, 2600);
+				setTimeout(function () { ov.classList.add('fx-pre-out'); setTimeout(function () { ov.remove(); }, 700); }, 900);
 			} catch (e) { }
 		})();
 	</script>
@@ -143,11 +121,13 @@
 
 <body class="myprofile font-sans antialiased leading-relaxed text-slate-800 dark:text-slate-200">
 
-	<!-- ================= HERO ================= -->
-	<header class="hero" id="top">
-		<canvas id="aintel-canvas" aria-hidden="true"></canvas>
-		<div class="hero-veil" aria-hidden="true"></div>
+	<a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
+	<!-- ================= NAV =================
+	     Sits outside .hero (not inside it) so ScrollTrigger's hero pin doesn't
+	     take the nav along with it. The bar itself is non-sticky and scrolls
+	     away with the page. -->
+	<div class="site-nav">
 		<nav class="hero-nav" aria-label="사이트">
 			<a class="hero-brand" href="ko.html" aria-label="무하마드 샤프루딘 — 홈">
 					<span class="brand-logo">
@@ -157,21 +137,30 @@
 				</a>
 			<div class="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
 				<div class="lang-switch">
-					<button type="button" class="lang-trigger js-lang-trigger" aria-haspopup="true" aria-expanded="false" aria-label="언어 변경">
+					<button type="button" class="lang-trigger js-lang-trigger" aria-expanded="false" aria-controls="lang-menu" aria-label="언어 변경">
 						<svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>
 						<span class="lang-current">한국어</span>
 						<svg class="lang-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
 					</button>
-					<ul class="lang-menu" id="lang-menu" role="menu">
-						<li role="none"><a role="menuitem" href="index.html" hreflang="en" class="lang-opt"><span class="lang-flag">🇺🇸</span>English</a></li>
-						<li role="none"><a role="menuitem" href="ko.html" hreflang="ko" class="lang-opt is-active"><span class="lang-flag">🇰🇷</span>한국어<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></a></li>
-						<li role="none"><a role="menuitem" href="id.html" hreflang="id" class="lang-opt"><span class="lang-flag">🇮🇩</span>Bahasa Indonesia</a></li>
+					<!-- plain list of navigation links: the previous role="menu" /
+					     role="menuitem" advertised menu-widget keyboard semantics
+					     this control never implemented -->
+					<ul class="lang-menu" id="lang-menu">
+						<li><a href="index.html" hreflang="en" class="lang-opt"><span class="lang-flag" aria-hidden="true">🇺🇸</span>English</a></li>
+						<li><a href="ko.html" hreflang="ko" class="lang-opt is-active" aria-current="page"><span class="lang-flag" aria-hidden="true">🇰🇷</span>한국어<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-11"/></svg></a></li>
+						<li><a href="id.html" hreflang="id" class="lang-opt"><span class="lang-flag" aria-hidden="true">🇮🇩</span>Bahasa Indonesia</a></li>
 					</ul>
 				</div>
 				<button class="js-change-theme rounded w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
-					aria-label="다크 모드 전환">🌛</button>
+					aria-pressed="false" aria-label="다크 모드로 전환">🌛</button>
 			</div>
 		</nav>
+	</div>
+
+	<!-- ================= HERO ================= -->
+	<header class="hero" id="top">
+		<canvas id="aintel-canvas" aria-hidden="true"></canvas>
+		<div class="hero-veil" aria-hidden="true"></div>
 
 		<div class="hero-inner">
 			<p class="hero-eyebrow">샤프루딘</p>
@@ -187,15 +176,15 @@
 					<span class="stat-label">경력(년)</span>
 				</div>
 				<div class="stat">
-					<span class="stat-num"><span id="workCountText">114+</span><sup>*</sup></span>
+					<span class="stat-num"><span id="workCountText">114+</span><sup><a href="#additionalInfo" aria-label="출처 주석 보기">*</a></sup></span>
 					<span class="stat-label">논문</span>
 				</div>
 				<div class="stat">
-					<span class="stat-num"><span id="citedCount">4,734+</span><sup>*</sup></span>
+					<span class="stat-num"><span id="citedCount">4,734+</span><sup><a href="#additionalInfo" aria-label="출처 주석 보기">*</a></sup></span>
 					<span class="stat-label">인용</span>
 				</div>
 				<div class="stat">
-					<span class="stat-num"><span id="outletCount">60+</span><sup>**</sup></span>
+					<span class="stat-num"><span id="outletCount">60+</span><sup><a href="#additionalInfo" aria-label="출처 주석 보기">**</a></sup></span>
 					<span class="stat-label">심사 활동</span>
 				</div>
 			</div>
@@ -216,12 +205,18 @@
 		</a>
 	</header>
 
-	<main>
+	<main id="main" tabindex="-1">
 		<!-- ================= ABOUT ================= -->
 		<section id="about" class="section reveal">
 			<h2 class="section-title">소개</h2>
 			<div class="card-glass p-6 md:p-9">
-				<div class="flex flex-col sm:flex-row gap-6 sm:items-start">
+				<!-- Two nested rows, not one three-column row. The 3D cycle used to
+				     claim a 240px column from the `sm` breakpoint up, which left the
+				     prose ~216px wide on a tablet in portrait and ~136px at 640px.
+				     Portrait + copy pair off at `sm`; the cycle only joins the row at
+				     `lg`, where there is actually room for a third column. -->
+				<div class="flex flex-col lg:flex-row gap-6 lg:items-center">
+					<div class="flex flex-col sm:flex-row gap-6 sm:items-start flex-1">
 					<img src="img/profile_desktop.webp" alt="무함마드 샤프루딘"
 						class="w-24 h-24 rounded object-cover border-2 border-primary-100 dark:border-primary-800 shadow-md mx-auto sm:mx-0 flex-shrink-0">
 					<div class="space-y-3 text-base leading-relaxed text-slate-700 dark:text-slate-300 max-w-prose">
@@ -246,11 +241,12 @@
 								data-tippy-content="연락 페이지 방문">연락해</a> 주세요.
 						</p>
 					</div>
+					</div>
 					<div class="about-cycle" aria-hidden="true">
 						<canvas id="about-canvas"></canvas>
 						<p class="about-cycle-fallback">
 							<a href="https://ms.ain.my.id/courses" class="link" target="_blank">Teach</a> ·
-							<a href="https://courses.ms.ain.my.id/about" class="link" target="_blank">Learn</a> ·
+							<a href="https://ms.ain.my.id/about" class="link" target="_blank">Learn</a> ·
 							<a href="https://ms.ain.my.id/research" class="link" target="_blank">Research</a> ·
 							<a href="https://ms.ain.my.id/contact" class="link" target="_blank">Collaborate</a>
 						</p>
@@ -367,9 +363,17 @@
 		<section id="updates" class="section reveal">
 			<h2 class="section-title">최근 소식</h2>
 			<div class="card-glass p-6 md:p-8">
-				<p class="text-base text-slate-600 dark:text-slate-400" id="recentUpdates">
-					<a href="https://ain.my.id" class="link" target="_blank">AIN Lab</a>의 최신 소식을 불러오는 중…</p>
-				<div id="additionalInfo" class="text-xs text-slate-600 dark:text-slate-400 mt-4"></div>
+				<!-- a <div>, not a <p>: the feed renders as a <ul>, which is not
+				     valid inside a paragraph -->
+				<div class="text-base text-slate-600 dark:text-slate-400" id="recentUpdates">
+					<a href="https://ain.my.id" class="link" target="_blank">AIN Lab</a>의 최신 소식을 불러오는 중…</div>
+				<!-- Source legend for the (*) / (**) markers on the hero stats.
+				     Shipped statically so those markers are never orphaned when the
+				     Scholar API is unreachable; fetchWorks() upgrades it in place
+				     with live links and the update timestamp. -->
+				<div id="additionalInfo" class="footnote mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+					<p data-note><em>(*) 논문 수와 인용 수 출처: Google Scholar. (**) 총 심사 활동 출처: ORCID.</em></p>
+				</div>
 			</div>
 		</section>
 	</main>

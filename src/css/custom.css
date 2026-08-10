@@ -7,11 +7,28 @@
 html, body {
 	margin: 0;
 	padding: 0;
-	overflow-x: hidden;
 }
 
+/* Horizontal clamp. It must NOT sit on <body>: that makes body a scroll
+   container, which breaks `position: sticky` descendants and can interfere with
+   smooth scrolling. `overflow: clip` clamps without establishing a scroll
+   container at all; `hidden` on the root is the fallback for engines without it
+   (all of which also fail the FX gate anyway). */
 html {
+	overflow-x: hidden;
 	scroll-behavior: smooth;
+}
+
+@supports (overflow: clip) {
+	html {
+		overflow-x: clip;
+	}
+}
+
+/* Height of the site nav band; the hero subtracts it so the first screen still
+   ends exactly at the fold. */
+:root {
+	--nav-h: 5.5rem;
 }
 
 /* ---------- Color system ---------- */
@@ -112,10 +129,42 @@ a.link:not(:has(svg)):focus-visible {
 	background-size: 100% 1.5px;
 }
 
+/* ---------- Skip link ---------- */
+.skip-link {
+	position: absolute;
+	left: 0.75rem;
+	top: 0.75rem;
+	z-index: 100;
+	padding: 0.6rem 1rem;
+	border-radius: 6px;
+	background: var(--accent);
+	color: #fff;
+	font-size: 0.85rem;
+	font-weight: 700;
+	text-decoration: none;
+	box-shadow: 0 10px 28px -8px var(--btn-glow);
+	transform: translateY(calc(-100% - 1rem));
+	transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.skip-link:focus-visible,
+.skip-link:focus {
+	transform: none;
+}
+
+/* the skip target must not draw a focus ring of its own when scripted focus
+   lands on it */
+main:focus,
+main:focus-visible {
+	outline: none;
+}
+
 /* ---------- Hero ---------- */
 .hero {
 	position: relative;
-	min-height: 100vh;
+	/* the nav sits above the hero in normal flow, so the first screen is
+	   viewport minus nav — otherwise the scroll cue is pushed past the fold */
+	min-height: calc(100vh - var(--nav-h));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -156,9 +205,11 @@ a.link:not(:has(svg)):focus-visible {
    absolutely positioned over the whole .hero — the scrim's percentages
    below stay correct because they're relative, not fixed vh. */
 @media (max-width: 640px) {
+	:root { --nav-h: 4.75rem; }
+
 	.hero {
-		min-height: 82vh;
-		min-height: 82svh;
+		min-height: calc(82vh - var(--nav-h));
+		min-height: calc(82svh - var(--nav-h));
 	}
 
 	.hero-inner {
@@ -172,11 +223,22 @@ a.link:not(:has(svg)):focus-visible {
 	}
 }
 
+/* The nav sits above the hero in normal flow and scrolls away with the page
+   (non-sticky, by design). It lives outside .hero rather than inside it so
+   ScrollTrigger's hero pin doesn't take it along; `.site-nav` is just the
+   full-width band, and `.hero-nav` keeps the inner max-width row. */
+.site-nav {
+	position: relative;
+	z-index: 50;
+	background: transparent;
+}
+
 .hero-nav {
 	position: relative;
 	z-index: 3;
 	width: 100%;
 	max-width: 72rem;
+	min-height: var(--nav-h);
 	margin: 0 auto;
 	display: flex;
 	align-items: center;
@@ -281,11 +343,22 @@ a.link:not(:has(svg)):focus-visible {
 .stat-label {
 	display: block;
 	margin-top: 0.2rem;
-	font-size: 0.72rem;
+	font-size: 0.8rem;
 	font-weight: 700;
-	letter-spacing: 0.14em;
+	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	color: var(--muted);
+}
+
+/* footnote markers on the stat numbers link down to the legend in Updates */
+.stat-num sup a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.stat-num sup a:hover {
+	color: var(--accent-hover);
+	text-decoration: underline;
 }
 
 /* Buttons */
@@ -558,17 +631,21 @@ a.link:not(:has(svg)):focus-visible {
 	opacity: 0.45;
 }
 
-/* About cycle (three.js) — fills the free space beside the About copy */
+/* About cycle (three.js) — fills the free space beside the About copy.
+   It only joins the text row from `lg` up. Claiming a 240px column from 640px
+   (as it used to) left the prose ~216px wide on an iPad in portrait and ~136px
+   at 640px — three or four words per line. Below `lg` it sits full-width under
+   the copy instead. */
 .about-cycle {
 	position: relative;
 	width: 100%;
-	min-height: 240px;
+	min-height: 210px;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 1024px) {
 	.about-cycle {
-		flex: 1 1 0;
-		min-width: 240px;
+		flex: 0 1 17rem;
+		min-width: 15rem;
 		min-height: 280px;
 		align-self: center;
 	}
@@ -644,6 +721,129 @@ a.link:not(:has(svg)):focus-visible {
 #recentUpdates {
 	font-size: 1.05rem;
 	line-height: 1.85;
+}
+
+/* Feed items render as a real list. They used to be four article titles joined
+   with ", " — titles routinely contain their own commas, so the result read as
+   one long ambiguous sentence. */
+.update-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.update-list li {
+	position: relative;
+	padding: 0.6rem 0 0.6rem 1.1rem;
+	border-bottom: 1px solid var(--divider);
+	font-size: 1rem;
+	line-height: 1.55;
+}
+
+.update-list li::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 1.12rem;
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--accent);
+	opacity: 0.7;
+}
+
+.update-list li:last-child { border-bottom: none; }
+
+.update-date {
+	display: block;
+	margin-top: 0.15rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.update-all {
+	display: inline-block;
+	margin-top: 0.9rem;
+	font-size: 0.9rem;
+}
+
+/* Legend for the (*) / (**) markers on the hero stats. Shipped statically in
+   the HTML so the markers are never orphaned when the Scholar API is
+   unreachable; the fetch replaces it with the same note plus a timestamp. */
+.footnote {
+	font-size: 0.8rem;
+	line-height: 1.6;
+	color: var(--muted);
+}
+
+.footnote p { margin: 0; }
+
+/* ---------- Language offer ----------
+   Replaces the old silent `location.replace()` on page load, which rewrote
+   deep links out from under whoever shared them. */
+.lang-offer {
+	position: fixed;
+	left: 50%;
+	top: calc(var(--nav-h) + 0.6rem);
+	z-index: 45;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	max-width: min(24rem, calc(100vw - 2rem));
+	padding: 0.55rem 0.55rem 0.55rem 0.9rem;
+	background: var(--card-bg);
+	border: 1px solid var(--card-border);
+	border-radius: 999px;
+	box-shadow: var(--card-shadow);
+	-webkit-backdrop-filter: blur(14px);
+	backdrop-filter: blur(14px);
+	font-size: 0.85rem;
+	opacity: 0;
+	transform: translate(-50%, -10px);
+	pointer-events: none;
+	transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.lang-offer.is-in {
+	opacity: 1;
+	transform: translate(-50%, 0);
+	pointer-events: auto;
+}
+
+.lang-offer-link {
+	color: var(--accent);
+	font-weight: 700;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.lang-offer-link:hover { text-decoration: underline; }
+
+.lang-offer-x {
+	all: unset;
+	flex-shrink: 0;
+	width: 1.4rem;
+	height: 1.4rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	color: var(--muted);
+	font-size: 1rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.lang-offer-x:hover, .lang-offer-x:focus-visible {
+	background: var(--icon-bg);
+	color: var(--heading);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lang-offer { transition: opacity 0.2s ease; transform: translate(-50%, 0); }
 }
 
 /* ---------- Scroll reveal ---------- */
@@ -837,9 +1037,21 @@ html {
 	transform: translateY(-6px) scale(0.98);
 	transform-origin: top right;
 	pointer-events: none;
-	transition: opacity 0.18s ease, transform 0.18s ease;
+	/* `visibility` (not just opacity) is what pulls the closed menu's links out
+	   of the tab order and out of the accessibility tree — without it, keyboard
+	   users tabbed into three invisible links and screen readers announced all
+	   three regardless of aria-expanded. Delayed on the way out so the fade
+	   still plays. */
+	visibility: hidden;
+	transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
 }
-.lang-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+.lang-menu.open {
+	opacity: 1;
+	transform: none;
+	pointer-events: auto;
+	visibility: visible;
+	transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+}
 
 .lang-opt {
 	display: flex;
@@ -960,13 +1172,18 @@ html {
 }
 [data-fx="on"] .research-item .research-icon { display: none; }
 
+/* z-index 3 (was 5). It has to clear `.section` (z-index 1) so the scenes paint
+   over the translucent card glass, but must stay under the sticky site nav
+   (50) and the language menu (40) — a full-viewport fixed canvas above the
+   navigation is asking for trouble. The renderer clears transparent and
+   scissors to each card's rect, so everything outside those rects is a no-op. */
 .fx-cards-canvas {
 	position: fixed;
 	inset: 0;
 	width: 100vw;
 	height: 100vh;
 	pointer-events: none;
-	z-index: 5;
+	z-index: 3;
 }
 
 /* Journey comet (cards.js, same shared renderer). When FX is on the WebGL
@@ -984,9 +1201,14 @@ html {
 	pointer-events: none;
 }
 
-/* ---- Custom cursor (js/fx/utils/microux.js) ---- */
-.fx-cursor-on, .fx-cursor-on * { cursor: none !important; }
-.fx-cursor-dot, .fx-cursor-ring {
+/* ---- Cursor accent ring (js/fx/utils/microux.js) ----
+   This layer is purely additive: the NATIVE cursor is never hidden. The old
+   `cursor: none !important` on every element removed the I-beam over body copy,
+   erased the pointer/text affordance distinction, and wiped out OS large-cursor
+   and high-contrast-cursor accessibility settings — and any throw after the
+   class was applied left the page with no cursor at all. A trailing ring reads
+   as a flourish on top of the real cursor and costs the user nothing. */
+.fx-cursor-ring {
 	position: fixed;
 	left: 0;
 	top: 0;
@@ -994,23 +1216,39 @@ html {
 	pointer-events: none;
 	border-radius: 50%;
 	will-change: transform;
-}
-.fx-cursor-dot { width: 8px; height: 8px; margin: -4px 0 0 -4px; background: var(--accent); }
-.fx-cursor-ring {
 	width: 34px; height: 34px; margin: -17px 0 0 -17px;
 	border: 1.5px solid var(--accent-soft);
-	transition: width 0.2s ease, height 0.2s ease, margin 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+	opacity: 0.75;
+	transition: width 0.2s ease, height 0.2s ease, margin 0.2s ease,
+		background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 .fx-cursor-hot .fx-cursor-ring {
 	width: 52px; height: 52px; margin: -26px 0 0 -26px;
 	border-color: var(--accent);
 	background: var(--accent-soft);
+	opacity: 1;
 }
 
-/* ---- Magnetic buttons ---- */
+/* ---- Magnetic buttons ----
+   The magnetic pull is composed here from custom properties that JS writes,
+   rather than JS assigning `element.style.transform` directly. Inline
+   transforms won the cascade against the theme-toggle's own hover rule below,
+   which silently killed that micro-interaction whenever FX was on. */
 .lang-trigger, .js-change-theme, .btn { will-change: transform; }
-[data-fx="on"] .lang-trigger, [data-fx="on"] .js-change-theme, [data-fx="on"] .btn {
+[data-fx="on"] .lang-trigger,
+[data-fx="on"] .js-change-theme,
+[data-fx="on"] .btn {
+	transform: translate(var(--fx-tx, 0px), var(--fx-ty, 0px));
 	transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+[data-fx="on"] .js-change-theme:hover {
+	transform: translate(var(--fx-tx, 0px), var(--fx-ty, 0px)) scale(1.12) rotate(-10deg);
+}
+
+[data-fx="on"] .btn-primary:hover,
+[data-fx="on"] .btn-ghost:hover {
+	transform: translate(var(--fx-tx, 0px), calc(var(--fx-ty, 0px) - 2px));
 }
 
 /* ---- Preloader monogram ---- */

@@ -5,7 +5,12 @@
 
 import { FINE_POINTER, REDUCED_MOTION } from './env.js';
 
-/* Magnetic pull toward the cursor on buttons/toggles. */
+/* Magnetic pull toward the cursor on buttons/toggles.
+   The offset is published as --fx-tx / --fx-ty custom properties and composed
+   into the element's transform by CSS, rather than written straight to
+   element.style.transform. An inline transform beat the theme toggle's own
+   :hover rule in the cascade, so that micro-interaction never fired while the
+   FX layer was on. */
 export const magnetic = () => {
     if (!FINE_POINTER || REDUCED_MOTION) return;
     document.querySelectorAll('.lang-trigger, .js-change-theme, .btn, .fx-magnetic').forEach((el) => {
@@ -16,29 +21,34 @@ export const magnetic = () => {
             const r = el.getBoundingClientRect();
             const mx = ev.clientX - (r.left + r.width / 2);
             const my = ev.clientY - (r.top + r.height / 2);
-            el.style.transform = `translate(${(mx * k).toFixed(1)}px, ${(my * k).toFixed(1)}px)`;
+            el.style.setProperty('--fx-tx', (mx * k).toFixed(1) + 'px');
+            el.style.setProperty('--fx-ty', (my * k).toFixed(1) + 'px');
         };
         el.addEventListener('pointermove', (e) => { ev = e; if (!raf) raf = requestAnimationFrame(move); });
-        el.addEventListener('pointerleave', () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } el.style.transform = ''; });
+        el.addEventListener('pointerleave', () => {
+            if (raf) { cancelAnimationFrame(raf); raf = 0; }
+            el.style.removeProperty('--fx-tx');
+            el.style.removeProperty('--fx-ty');
+        });
     });
 };
 
-/* Custom cursor: a solid dot that tracks 1:1 and a ring that trails and grows
-   over interactive elements. Native cursor is hidden only while this is active;
-   first touch tears it all down so touch users keep the system cursor. */
+/* Cursor accent: a ring that trails the pointer and grows over interactive
+   elements. It is purely decorative and sits ON TOP of the native cursor — the
+   previous version hid the system cursor globally (`cursor: none !important`),
+   which removed the I-beam over body copy, flattened the pointer/text
+   affordance distinction, and defeated OS large-cursor and high-contrast-cursor
+   accessibility settings. First touch tears it down so touch users are clean. */
 export const customCursor = () => {
     if (!FINE_POINTER || REDUCED_MOTION) return;
-    const dot = document.createElement('div'); dot.className = 'fx-cursor-dot';
-    const ring = document.createElement('div'); ring.className = 'fx-cursor-ring';
-    [dot, ring].forEach((e) => { e.setAttribute('aria-hidden', 'true'); document.body.appendChild(e); });
+    const ring = document.createElement('div');
+    ring.className = 'fx-cursor-ring';
+    ring.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(ring);
     const root = document.documentElement;
-    root.classList.add('fx-cursor-on');
 
     let mx = window.innerWidth / 2, my = window.innerHeight / 2, rx = mx, ry = my, raf = 0, alive = true;
-    window.addEventListener('pointermove', (e) => {
-        mx = e.clientX; my = e.clientY;
-        dot.style.transform = `translate(${mx}px, ${my}px)`;
-    }, { passive: true });
+    window.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
     const loop = () => {
         rx += (mx - rx) * 0.2; ry += (my - ry) * 0.2;
         ring.style.transform = `translate(${rx}px, ${ry}px)`;
@@ -46,22 +56,35 @@ export const customCursor = () => {
     };
     raf = requestAnimationFrame(loop);
 
-    const INTER = 'a, button, [role="menuitem"], .research-item, .stat, .lang-trigger, .js-change-theme';
-    document.addEventListener('pointerover', (e) => { if (e.target.closest && e.target.closest(INTER)) root.classList.add('fx-cursor-hot'); });
-    document.addEventListener('pointerout', (e) => { if (e.target.closest && e.target.closest(INTER)) root.classList.remove('fx-cursor-hot'); });
+    /* Track hover depth rather than toggling a boolean class: pointerout fires
+       when moving between a target's own descendants, which made the highlight
+       flicker on any link containing an <svg> or <span>. */
+    const INTER = 'a, button, .research-item, .stat, .lang-trigger, .js-change-theme';
+    const hit = (e) => e.target && e.target.closest && e.target.closest(INTER);
+    document.addEventListener('pointerover', (e) => { if (hit(e)) root.classList.add('fx-cursor-hot'); });
+    document.addEventListener('pointerout', (e) => {
+        const from = hit(e);
+        if (!from) return;
+        // only clear when the pointer actually leaves the interactive element
+        const to = e.relatedTarget;
+        if (to && to.closest && to.closest(INTER) === from) return;
+        root.classList.remove('fx-cursor-hot');
+    });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { alive = false; cancelAnimationFrame(raf); } else if (!alive) { alive = true; raf = requestAnimationFrame(loop); } });
 
     window.addEventListener('touchstart', () => {
         alive = false; cancelAnimationFrame(raf);
-        root.classList.remove('fx-cursor-on', 'fx-cursor-hot');
-        dot.remove(); ring.remove();
+        root.classList.remove('fx-cursor-hot');
+        ring.remove();
     }, { once: true, passive: true });
 };
 
 /* Preloader: the "M·S" overlay is injected by the inline <head> gate before
-   first paint (so there's no content flash and a longstop always clears it).
-   Here we just hide it as soon as the page has loaded — earlier than the
-   gate's longstop — so it never blocks longer than the load actually takes. */
+   first paint. There is nothing genuinely being preloaded — the content is
+   static HTML — so this now clears at the first opportunity rather than
+   waiting on `load` (which blocks on the CDN'd DocSearch bundle, remote RSS,
+   and every image). It goes at DOMContentLoaded, with a 600ms longstop.
+   Anything slower than that was costing LCP for a flourish. */
 export const preloader = () => {
     const ov = document.querySelector('.fx-preloader');
     if (!ov) return;
@@ -71,9 +94,12 @@ export const preloader = () => {
         ov.classList.add('fx-pre-out');
         setTimeout(() => ov.remove(), 700);
     };
-    if (document.readyState === 'complete') setTimeout(finish, 300);
-    else window.addEventListener('load', () => setTimeout(finish, 300), { once: true });
-    setTimeout(finish, 1800);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', finish, { once: true });
+    } else {
+        finish();
+    }
+    setTimeout(finish, 600);
 };
 
 /* Footer social icons lift in with a soft stagger when scrolled into view. */

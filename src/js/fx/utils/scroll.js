@@ -46,15 +46,29 @@ export const initScroll = (heroHandle) => {
         lenis.on('scroll', ScrollTrigger.update);
         gsap.ticker.add((time) => lenis.raf(time * 1000));
         gsap.ticker.lagSmoothing(0);
-        // internal anchor links should use Lenis so the smooth scroll is honoured
-        document.querySelectorAll('a[href^="#"]').forEach((a) => {
+        /* Internal anchor links should use Lenis so the smooth scroll is
+           honoured — including the skip link, since a native anchor jump would
+           just be overridden by Lenis's own rAF loop. preventDefault() here
+           swallows the browser's native "move focus to the target" behaviour,
+           which is the entire point of a skip link, so focus is moved
+           explicitly on completion; that also stops keyboard users being
+           scrolled somewhere their tab position hasn't followed. [data-no-lenis]
+           is the escape hatch for any anchor that must keep native behaviour.
+           The nav is not sticky, so no offset is needed. */
+        document.querySelectorAll('a[href^="#"]:not([data-no-lenis])').forEach((a) => {
             a.addEventListener('click', (e) => {
                 const id = a.getAttribute('href');
                 if (id.length < 2) return;
                 const el = document.querySelector(id);
                 if (!el) return;
                 e.preventDefault();
-                lenis.scrollTo(el, { offset: 0 });
+                lenis.scrollTo(el, {
+                    offset: 0,
+                    onComplete: () => {
+                        if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+                        el.focus({ preventScroll: true });
+                    }
+                });
             });
         });
 
@@ -67,7 +81,11 @@ export const initScroll = (heroHandle) => {
             ScrollTrigger.create({
                 trigger: hero,
                 start: 'top top',
-                end: '+=' + Math.round(window.innerHeight * (SMALL ? 1.0 : 1.25)),
+                /* Was 1.25 viewports (1.0 on phones) — that meant the first
+                   full screen-and-a-quarter of scrolling produced no page
+                   movement at all before the first section appeared. Halved:
+                   the morph still reads, but visitors reach the content. */
+                end: '+=' + Math.round(window.innerHeight * (SMALL ? 0.45 : 0.6)),
                 pin: true,
                 pinSpacing: true,
                 scrub: true,

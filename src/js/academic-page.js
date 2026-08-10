@@ -6,6 +6,44 @@ const YOUR_GS_ID = "WLTzkOMAAAAJ";
 
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* ---------- UI strings ----------
+   Everything the scripts inject at runtime lives here, keyed off <html lang>,
+   so the three static pages stay byte-identical outside their prose and none
+   of this has to be hand-replicated across them. */
+const PAGE_LANG = (document.documentElement.lang || 'en').slice(0, 2);
+const STRINGS = {
+    en: {
+        themeDark: 'Switch to dark mode',
+        themeLight: 'Switch to light mode',
+        allUpdates: 'All updates',
+        viewUpdate: 'View this update',
+        viewAllUpdates: 'View all updates',
+        offer: 'View in English',
+        dismiss: 'Dismiss'
+    },
+    ko: {
+        themeDark: '다크 모드로 전환',
+        themeLight: '라이트 모드로 전환',
+        allUpdates: '전체 소식',
+        viewUpdate: '이 소식 보기',
+        viewAllUpdates: '모든 소식 보기',
+        offer: '한국어로 보기',
+        dismiss: '닫기'
+    },
+    id: {
+        themeDark: 'Beralih ke mode gelap',
+        themeLight: 'Beralih ke mode terang',
+        allUpdates: 'Semua pembaruan',
+        viewUpdate: 'Lihat pembaruan ini',
+        viewAllUpdates: 'Lihat semua pembaruan',
+        offer: 'Lihat dalam Bahasa Indonesia',
+        dismiss: 'Tutup'
+    }
+};
+const T = STRINGS[PAGE_LANG] || STRINGS.en;
+const THEME_LABEL_DARK = T.themeDark;
+const THEME_LABEL_LIGHT = T.themeLight;
+
 // Cache DOM elements
 const elements = {
     yearofexp: document.getElementById("yearofexp"),
@@ -14,6 +52,18 @@ const elements = {
     citedCount: document.getElementById("citedCount"),
     outletCount: document.getElementById("outletCount"),
     recentUpdates: document.getElementById('recentUpdates')
+};
+
+/* Bind tooltips to anything carrying data-tippy-content that isn't bound yet.
+   Declared up here because the fetch handlers below call it once they've
+   injected their own links — the original single tippy('.link') call ran before
+   any of that markup existed, so every data-tippy-content on an injected link
+   was dead. Marking bound elements keeps repeat calls from stacking instances. */
+const applyTooltips = () => {
+    const targets = document.querySelectorAll('.link[data-tippy-content]:not([data-tippy-bound])');
+    if (!targets.length) return;
+    targets.forEach((el) => el.setAttribute('data-tippy-bound', ''));
+    tippy(targets, { placement: 'bottom' });
 };
 
 /* ---------- Animated counters ---------- */
@@ -46,7 +96,22 @@ const fetchWorks = async () => {
         if (workItems) {
             animateCount(elements.workCountText, workItems.total_papers);
             animateCount(elements.citedCount, workItems.total_citations);
-            elements.footerInfo.innerHTML = `<p class="italic">(*) Publications and citations from <a href="${workItems.gs_id}&view_op=list_works&sortby=pubdate" target="_blank" class="link">Google Scholar</a>, (**) total peer review outlets from <a href="https://orcid.org/${YOUR_ORCID}" target="_blank" class="link">ORCID</a>. Updated ${workItems.updated}.</p>`;
+            /* The static legend already in the HTML is upgraded in place with
+               live links + the update timestamp. It is NOT created here — if
+               this request fails the markers in the hero must still resolve to
+               an explanation. */
+            const note = elements.footerInfo.querySelector('[data-note]');
+            if (note) {
+                note.innerHTML = note.innerHTML
+                    .replace('Google Scholar', `<a href="${workItems.gs_id}&view_op=list_works&sortby=pubdate" target="_blank" class="link">Google Scholar</a>`)
+                    .replace('ORCID', `<a href="https://orcid.org/${YOUR_ORCID}" target="_blank" class="link">ORCID</a>`);
+                if (workItems.updated) {
+                    const stamp = document.createElement('span');
+                    stamp.textContent = ` (${workItems.updated})`;
+                    note.appendChild(stamp);
+                }
+                applyTooltips();
+            }
         }
         return workItems;
     } catch (errors) {
@@ -70,17 +135,62 @@ const fetchReviews = async () => {
 
 const fetchUpdates = async () => {
     try {
-        const response = await axios.get('https://ain.my.id/rss.xml');
+        const response = await axios.get('https://ain.my.id/updates/rss.xml');
         const rssdataxml = response.data;
         const updatedata = fromXML(rssdataxml);
         const recentupdates = updatedata.rss.channel.item.slice(0, 4);
 
-        let updates = recentupdates.map(item =>
-            `<a href='${item.link}' target='_blank' class='link' data-tippy-content='View this update'>${item.title}</a>`
-        ).join(', ');
+        /* Rendered as a real list. Joining four article titles with ", " made
+           one long ambiguous sentence — feed titles regularly contain their own
+           commas, so there was no way to tell where one item ended. */
+        const fmtDate = (raw) => {
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (isNaN(d)) return '';
+            try {
+                return d.toLocaleDateString(document.documentElement.lang || 'en', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+            } catch (e) {
+                return d.toDateString();
+            }
+        };
 
-        updates += `, <a href='https://ain.my.id' class='link' data-tippy-content='View all updates' target='_blank'>All updates</a>`;
-        elements.recentUpdates.innerHTML = updates;
+        const list = document.createElement('ul');
+        list.className = 'update-list';
+        recentupdates.forEach((item) => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.className = 'link';
+            a.href = item.link;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.setAttribute('data-tippy-content', T.viewUpdate);
+            a.textContent = item.title;
+            li.appendChild(a);
+            const when = fmtDate(item.pubDate);
+            if (when) {
+                const time = document.createElement('time');
+                time.className = 'update-date';
+                time.dateTime = new Date(item.pubDate).toISOString();
+                time.textContent = when;
+                li.appendChild(time);
+            }
+            list.appendChild(li);
+        });
+
+        const all = document.createElement('a');
+        all.className = 'link update-all';
+        all.href = 'https://ain.my.id';
+        all.target = '_blank';
+        all.rel = 'noopener';
+        all.setAttribute('data-tippy-content', T.viewAllUpdates);
+        all.textContent = T.allUpdates + ' →';
+
+        elements.recentUpdates.textContent = '';
+        elements.recentUpdates.appendChild(list);
+        elements.recentUpdates.appendChild(all);
+        applyTooltips();
     } catch (errors) {
         console.error(errors);
     }
@@ -99,17 +209,23 @@ init();
 const yearbuild = document.getElementById("yearbuild");
 yearbuild.innerHTML = new Date().getFullYear();
 
-// Init tooltips
-tippy('.link', {
-    placement: 'bottom'
-})
+// Bind tooltips to the static markup (see applyTooltips above; the fetch
+// handlers call it again for anything they inject).
+applyTooltips();
 
 /* ---------- Theme toggle (light/dark), persisted ---------- */
 const toggle = document.querySelector('.js-change-theme');
 const root = document.documentElement;
 
+/* The label has to track the state, not just the emoji — a screen reader user
+   previously heard "Toggle dark mode" in both states with no way to tell which
+   was active. aria-pressed carries the state; the label says what pressing it
+   will do. */
 const setToggleIcon = () => {
-    toggle.innerHTML = root.classList.contains('dark') ? '🌞' : '🌛';
+    const dark = root.classList.contains('dark');
+    toggle.innerHTML = dark ? '🌞' : '🌛';
+    toggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    toggle.setAttribute('aria-label', dark ? THEME_LABEL_LIGHT : THEME_LABEL_DARK);
 };
 setToggleIcon();
 
@@ -916,10 +1032,10 @@ function buildCycleScene(canvas) {
 
     /* ---------- click a word to visit the page it represents ---------- */
     const WORD_LINKS = [
-        'https://muhammadsyafrudin.com/courses',
-        'https://courses.muhammadsyafrudin.com/about',
-        'https://muhammadsyafrudin.com/research',
-        'https://muhammadsyafrudin.com/contact'
+        'https://ms.ain.my.id/courses',
+        'https://ms.ain.my.id/about',
+        'https://ms.ain.my.id/research',
+        'https://ms.ain.my.id/contact'
     ];
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
@@ -1283,25 +1399,123 @@ if (document.documentElement.getAttribute('data-fx') !== 'on') {
     });
 })();
 
-/* ---------- Language switcher dropdown ---------- */
+/* ---------- Language switcher dropdown ----------
+   The list is plain navigation links (the ARIA menu roles were removed from the
+   markup: they advertise arrow-key semantics this control never implemented,
+   and a set of links to other pages is not a menu widget). What is implemented
+   here is what a disclosure actually owes the keyboard: arrow keys as a
+   convenience, Escape closes AND returns focus to the trigger, and focus
+   leaving the group closes it. */
 (() => {
     const trigger = document.querySelector('.js-lang-trigger');
     const menu = document.getElementById('lang-menu');
     if (!trigger || !menu) return;
     const wrap = trigger.closest('.lang-switch');
-    const close = () => { menu.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); };
+    const links = Array.from(menu.querySelectorAll('a[hreflang]'));
+
+    const close = (refocus) => {
+        if (menu.classList.contains('open') && refocus) trigger.focus();
+        menu.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+    };
     const open = () => { menu.classList.add('open'); trigger.setAttribute('aria-expanded', 'true'); };
+
     trigger.addEventListener('click', (e) => {
         e.stopPropagation();
-        menu.classList.contains('open') ? close() : open();
+        menu.classList.contains('open') ? close(false) : open();
     });
-    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-    menu.querySelectorAll('a[hreflang]').forEach((link) => {
+
+    trigger.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            open();
+            (e.key === 'ArrowDown' ? links[0] : links[links.length - 1]).focus();
+        }
+    });
+
+    menu.addEventListener('keydown', (e) => {
+        const i = links.indexOf(document.activeElement);
+        if (i < 0) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); links[(i + 1) % links.length].focus(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); links[(i - 1 + links.length) % links.length].focus(); }
+        else if (e.key === 'Home') { e.preventDefault(); links[0].focus(); }
+        else if (e.key === 'End') { e.preventDefault(); links[links.length - 1].focus(); }
+    });
+
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(true); });
+    // tabbing out of the group closes it
+    wrap.addEventListener('focusout', () => {
+        setTimeout(() => { if (!wrap.contains(document.activeElement)) close(false); }, 0);
+    });
+
+    links.forEach((link) => {
         link.addEventListener('click', () => {
-            localStorage.setItem('language', link.getAttribute('hreflang'));
+            try { localStorage.setItem('language', link.getAttribute('hreflang')); } catch (e) { }
         });
     });
+})();
+
+/* ---------- Language offer ----------
+   Replaces the load-time `location.replace()` that used to bounce visitors
+   between the three pages. That silently rewrote deep links out from under
+   whoever shared them — a Korean-locale visitor opening a link to the English
+   page landed on ko.html with no notice and no way back — and it was redundant
+   with the server-side geo rule in _redirects, which localises `/` before the
+   browser is ever involved. Here we only *offer* the switch. */
+(() => {
+    const PAGES = { en: 'index.html', ko: 'ko.html', id: 'id.html' };
+    const NAMES = { en: 'View in English', ko: '한국어로 보기', id: 'Lihat dalam Bahasa Indonesia' };
+    const KEY = 'ms-lang-offer-dismissed';
+
+    const detect = () => {
+        const list = (navigator.languages && navigator.languages.length)
+            ? navigator.languages
+            : [navigator.language || 'en'];
+        for (let i = 0; i < list.length; i++) {
+            const code = (list[i] || '').toLowerCase().split('-')[0];
+            if (code === 'ko') return 'ko';
+            if (code === 'id' || code === 'in') return 'id';
+            if (code === 'en') return 'en';
+        }
+        return 'en';
+    };
+
+    let stored = null;
+    try { stored = localStorage.getItem('language'); } catch (e) { }
+    const want = (stored && PAGES[stored]) ? stored : detect();
+    if (want === PAGE_LANG) return;
+
+    try { if (localStorage.getItem(KEY) === want) return; } catch (e) { }
+
+    const el = document.createElement('div');
+    el.className = 'lang-offer';
+    el.setAttribute('role', 'status');
+
+    const link = document.createElement('a');
+    link.className = 'lang-offer-link';
+    link.href = PAGES[want];
+    link.setAttribute('hreflang', want);
+    link.textContent = NAMES[want];
+    link.addEventListener('click', () => {
+        try { localStorage.setItem('language', want); } catch (e) { }
+    });
+
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'lang-offer-x';
+    x.setAttribute('aria-label', T.dismiss);
+    x.textContent = '×';
+    x.addEventListener('click', () => {
+        el.classList.remove('is-in');
+        try { localStorage.setItem(KEY, want); } catch (e) { }
+        setTimeout(() => el.remove(), 400);
+    });
+
+    el.appendChild(link);
+    el.appendChild(x);
+    document.body.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-in')));
 })();
 
 /* ============================================================
