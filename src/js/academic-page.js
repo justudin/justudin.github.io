@@ -90,12 +90,19 @@ animateCount(elements.yearofexp, new Date().getFullYear() - 2014);
 /* ---------- Live scholar / ORCID data ---------- */
 const fetchWorks = async () => {
     try {
-        const response = await axios.get(`${API_BACKEND_URL}/authorid/${YOUR_GS_ID}.json`);
-        const workItems = response.data;
+        //const response = await axios.get(`${API_BACKEND_URL}/authorid/${YOUR_GS_ID}.json`);
+        //const workItems = response.data;
+        const response = await fetch('https://s.ain.my.id/api/publications.json');
+        const publications = await response.json();
 
-        if (workItems) {
-            animateCount(elements.workCountText, workItems.total_papers);
-            animateCount(elements.citedCount, workItems.total_citations);
+        if (publications) {
+            const totalPublications = publications.length;
+            const totalCitations = publications.reduce((sum, pub) => sum + (pub.citedBy || 0), 0);
+
+            // Take one date — e.g. the exportedAt timestamp of the first entry
+            const updatedDate = publications[0]?.exportedAt || null;
+            animateCount(elements.workCountText, totalPublications);
+            animateCount(elements.citedCount, totalCitations);
             /* The static legend already in the HTML is upgraded in place with
                live links + the update timestamp. It is NOT created here — if
                this request fails the markers in the hero must still resolve to
@@ -105,9 +112,9 @@ const fetchWorks = async () => {
                 note.innerHTML = note.innerHTML
                     .replace('Google Scholar', `<a href="${workItems.gs_id}&view_op=list_works&sortby=pubdate" target="_blank" class="link">Google Scholar</a>`)
                     .replace('ORCID', `<a href="https://orcid.org/${YOUR_ORCID}" target="_blank" class="link">ORCID</a>`);
-                if (workItems.updated) {
+                if (updatedDate) {
                     const stamp = document.createElement('span');
-                    stamp.textContent = ` (${workItems.updated})`;
+                    stamp.textContent = ` (${updatedDate})`;
                     note.appendChild(stamp);
                 }
                 applyTooltips();
@@ -121,13 +128,19 @@ const fetchWorks = async () => {
 
 const fetchReviews = async () => {
     try {
-        const response = await axios.get(`${API_BACKEND_URL}/orcid/${YOUR_ORCID}/reviews.json`);
-        const workItems = response.data;
+        //const response = await axios.get(`${API_BACKEND_URL}/orcid/${YOUR_ORCID}/reviews.json`);
+        //const workItems = response.data;
+        const response = await fetch('https://s.ain.my.id/api/reviews.json');
+        const data = await response.json();
 
-        if (workItems) {
-            animateCount(elements.outletCount, workItems.total_outlets);
+        if (data) {
+            // Extract the "name" field from each entry
+            const names = data.map(item => item.name);
+            // Get unique names using a Set
+            const uniqueNames = [...new Set(names)];
+            animateCount(elements.outletCount, uniqueNames.length);
         }
-        return workItems;
+        return data;
     } catch (errors) {
         console.error(errors);
     }
