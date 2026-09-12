@@ -92,7 +92,7 @@ const fetchWorks = async () => {
     try {
         //const response = await axios.get(`${API_BACKEND_URL}/authorid/${YOUR_GS_ID}.json`);
         //const workItems = response.data;
-        const response = await fetch('https://s.ain.my.id/api/publications.json');
+        const response = await fetch('https://ain.my.id/api/publications.json');
         const publications = await response.json();
 
         if (publications) {
@@ -130,7 +130,7 @@ const fetchReviews = async () => {
     try {
         //const response = await axios.get(`${API_BACKEND_URL}/orcid/${YOUR_ORCID}/reviews.json`);
         //const workItems = response.data;
-        const response = await fetch('https://s.ain.my.id/api/reviews.json');
+        const response = await fetch('https://ain.my.id/api/reviews.json');
         const data = await response.json();
 
         if (data) {
