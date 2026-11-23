@@ -217,7 +217,7 @@ const init = async () => {
     ]);
 };
 
-init();
+//init();
 
 const yearbuild = document.getElementById("yearbuild");
 yearbuild.innerHTML = new Date().getFullYear();
